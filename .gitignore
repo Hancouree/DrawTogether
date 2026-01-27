@@ -1,0 +1,40 @@
+# Сборки Qt
+build-*/
+*-build/
+build/
+release/
+debug/
+
+# CMake
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+*.cmake
+
+# Qt Creator
+*.pro.user
+*.pro.user.*
+*.qmake.stash
+.creator.*
+
+# Скомпилированные файлы
+*.o
+*.obj
+*.so
+*.a
+*.dll
+*.exe
+*.app
+moc_*.cpp
+qrc_*.cpp
+ui_*.h
+
+# Временные файлы
+*~
+*.swp
+*.bak
+*.tmp
+*.log
+.DS_Store
+Thumbs.db
