@@ -1,46 +1,55 @@
 #include "logic.h"
 
-Logic::Logic(QObject *parent) : QObject(parent), _socket(new QWebSocket), connectionAttempts(0)
+Logic::Logic(QObject *parent)
+    : QObject(parent), _requestManager(new RequestManager(QUrl(("wss://26.209.218.198:5050")), this)), _roomsModel(new RoomsModel(this))
 {
-    _socket->setParent(this);
-    connect(_socket, &QWebSocket::stateChanged, this, [this]() {
-        emit connectionChanged();
-    });
-    connect(_socket, &QWebSocket::sslErrors, this, [this](const QList<QSslError> errors) {
-        for (const auto& error : errors)
-            qDebug() << error.errorString() << '\n';
-        _socket->ignoreSslErrors();
-    });
-    connect(_socket, &QWebSocket::connected, this, [this]() {
-        if (connectionTimer.isActive()) {
-            connectionTimer.stop();
-            connectionAttempts = 0;
-        }
-    });
-    connect(_socket, &QWebSocket::disconnected, this, [this]() {
-        qDebug() << "Socket disconnected, reconnecting...\n";
-        connectionTimer.start();
-    });
-
-    connectionTimer.setInterval(2000);
-    connect(&connectionTimer, &QTimer::timeout, this, [this]() {
-        if (connectionAttempts >= MAX_CONNECTION_ATTEMPTS)
-            emit connectionFailed();
-        else {
-            _socket->open(QUrl("wss://26.209.218.198:5050"));
-            connectionAttempts++;
-            qDebug() << "Connection attempt: " << connectionAttempts << '\n';
-        }
-    });
-
-    _socket->open(QUrl("wss://26.209.218.198:5050"));
-    connectionTimer.start();
+    connect(_requestManager, &RequestManager::connectionChanged, this, [this](){ emit connectionChanged(); });
+    connect(_requestManager, &RequestManager::connectionFailed, this, [this](){ emit connectionFailed(); });
+    connect(&_state, &FSM::stateChanged, this, [this]() { emit stateChanged(); });
 }
 
 void Logic::connectOnceMore()
 {
-    connectionAttempts = 0;
+    _requestManager->connectOnceMore();
+}
+
+void Logic::setUsername(const QString &username)
+{
+    _username = username;
+    _state.applyEvent(FSM::USERNAME_ESTABLISHED);
+}
+
+void Logic::findRooms()
+{
+    if (_roomsModel->count() > 0)
+        _roomsModel->clear();
+
+    QJsonObject root;
+    root["cmd"] = "find_rooms";
+    root["limit"] = 10;
+    root["offset"] = (int)_roomsModel->offset();
+    root["timestamp"] = QDateTime::currentMSecsSinceEpoch();
+
+    _requestManager->request(root, 5000)
+        .then([this](const QJsonObject& answer) {
+            qDebug() << "Hello: " << answer << '\n';
+            _roomsModel->setLoading(false);
+        })
+        .catchError([this](const QJsonObject& error) { _roomsModel->setLoading(false); });
+    _roomsModel->setLoading(true);
+    _state.applyEvent(FSM::SEARCH_ROOMS);
+}
+
+void Logic::undoTransition()
+{
+    _state.applyEvent(FSM::BACK);
+}
+
+void Logic::createRoom()
+{
+    qDebug() << "Create room called\n";
 }
 
 Logic::~Logic() {}
+
 

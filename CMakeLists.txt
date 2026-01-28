@@ -25,6 +25,13 @@ qt_add_qml_module(appDrawTogether
         QML_FILES
         QML_FILES reusable/RectButton.qml
         QML_FILES reusable/Spinner.qml
+        QML_FILES components/MenuPage.qml
+        SOURCES logic/roomsmodel.h logic/roomsmodel.cpp
+        QML_FILES components/RoomsPage.qml
+        QML_FILES components/RoomSkeleton.qml
+        SOURCES logic/fsm.h logic/fsm.cpp
+        SOURCES logic/requestmanager.h logic/requestmanager.cpp
+        SOURCES
 )
 
 set_target_properties(appDrawTogether PROPERTIES

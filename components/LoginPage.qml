@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Controls
+import QtQuick.Effects
 
 Item {
     id: root
@@ -25,6 +26,17 @@ Item {
             height: Math.min(parent.height, 480)
             radius: parent.width > 640 ? 5 : 0
             anchors.centerIn: parent
+
+            RectangularShadow {
+                anchors.fill: innerRect
+                offset.x: 0
+                offset.y: 8
+                radius: innerRect.radius
+                blur: 25
+                spread: 0.0
+                color: "#40000000"
+                z: innerRect.z - 1
+            }
 
             Column {
                 width: input.width
@@ -65,7 +77,16 @@ Item {
                     id: button
                     width: input.width / 2
                     height: 30
+                    text: "Set"
+                    scale: hovered ? 1.1 : 1.0
                     anchors.horizontalCenter: parent.horizontalCenter
+
+                    Behavior on scale {
+                        NumberAnimation {
+                            duration: 400
+                            easing.type: Easing.OutBack // Небольшой эффект "пружинки" для живости
+                        }
+                    }
 
                     MouseArea {
                         anchors.fill: parent

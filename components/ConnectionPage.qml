@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Effects
 
 Item {
     id: root
@@ -19,56 +20,69 @@ Item {
             radius: parent.width > 640 ? 5 : 0
             anchors.centerIn: parent
 
+            RectangularShadow {
+                anchors.fill: innerRect
+                offset.x: 0
+                offset.y: 8
+                radius: innerRect.radius
+                blur: 25
+                spread: 0.0
+                color: "#40000000"
+                z: innerRect.z - 1
+            }
+
             Item {
-                width: childrenRect.width
-                height: childrenRect.height
+                width: mainColumn.width
+                height: mainColumn.height
                 anchors.centerIn: parent
 
                 Column {
-                    width: childrenRect.width
-                    height: childrenRect.height
+                    id: mainColumn
                     spacing: 20
-                    visible: root.connectionFailed
-                    anchors.centerIn: parent
+                    anchors.horizontalCenter: parent.horizontalCenter
 
-                    Text {
-                        text: "Failed to connect to the server, check your internet connection... :("
-                        font.pixelSize: 16
-                        anchors.horizontalCenter: parent.horizontalCenter
-                    }
-
-                    RectButton {
-                        width: 150
-                        height: 30
-                        text: "Try once more"
+                    Column {
+                        spacing: 20
+                        visible: root.connectionFailed
                         anchors.horizontalCenter: parent.horizontalCenter
 
-                        MouseArea {
-                            anchors.fill: parent
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: root.connectOnceMore()
+                        Text {
+                            text: "Failed to connect to the server, check your internet connection... :("
+                            font.pixelSize: 16
+                            anchors.horizontalCenter: parent.horizontalCenter
+                        }
+
+                        RectButton {
+                            width: 150
+                            height: 30
+                            text: "Try once more"
+                            anchors.horizontalCenter: parent.horizontalCenter
+
+                            MouseArea {
+                                anchors.fill: parent
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: root.connectOnceMore()
+                            }
                         }
                     }
-                }
 
-                Column {
-                    width: childrenRect.width
-                    height: childrenRect.height
-                    spacing: 20
-                    visible: !root.connectionFailed
-                    anchors.centerIn: parent
-
-                    Text {
-                        text: "Connecting to the server..."
-                        font.pixelSize: 16
+                    Column {
+                        spacing: 20
+                        visible: !root.connectionFailed
                         anchors.horizontalCenter: parent.horizontalCenter
-                    }
 
-                    Spinner {
-                        id: spinner
-                        width: 25
-                        height: 25
-                        anchors.horizontalCenter: parent.horizontalCenter
+                        Text {
+                            text: "Connecting to the server..."
+                            font.pixelSize: 16
+                            anchors.horizontalCenter: parent.horizontalCenter
+                        }
+
+                        Spinner {
+                            id: spinner
+                            width: 25
+                            height: 25
+                            anchors.horizontalCenter: parent.horizontalCenter
+                        }
                     }
                 }
             }

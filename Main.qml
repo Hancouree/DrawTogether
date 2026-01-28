@@ -14,17 +14,29 @@ Window {
     StackView {
         id: stackView
         anchors.fill: parent
-        initialItem: root.connected ? loginPage : connectionPage
+        initialItem: connectionPage
     }
 
     ConnectionPage {
         id: connectionPage
-        visible: !root.connected
+        visible: true
     }
 
     LoginPage {
         id: loginPage
-        visible: root.connected
+        visible: false
+    }
+
+    MenuPage {
+        id: menuPage
+        visible: false
+    }
+
+    RoomsPage {
+        id: roomsPage
+        visible: false
+        model: logic.roomsModel
+        isInfoLoading: logic.roomsModel.loading
     }
 
     Connections {
@@ -35,18 +47,33 @@ Window {
                     stackView.push(connectionPage)
                 }
             } else {
-                if (stackView.currentItem === connectionPage) {
+                if (stackView.depth > 1) {
                     stackView.pop()
-                }
-
-                if (!stackView.currentItem) {
-                    stackView.push(loginPage)
+                } else {
+                    stackView.replace(loginPage)
                 }
             }
         }
 
         function onConnectionFailed() {
             connectionPage.connectionFailed = true
+        }
+
+        function onStateChanged() {
+            console.log("Current state: ", logic.state)
+            switch(logic.state) {
+            case 0: //LOGIN
+                stackView.replace(loginPage)
+                break;
+            case 1: //MENU
+                stackView.replace(menuPage)
+                break
+            case 2: //SEARCHING_ROOMS
+                stackView.replace(roomsPage);
+            case 3: //CREATING_ROOM
+                console.log("Creating room is not yet implemented")
+                break;
+            }
         }
     }
 
@@ -55,6 +82,35 @@ Window {
         function onConnectOnceMore() {
             logic.connectOnceMore()
             connectionPage.connectionFailed = false
+        }
+    }
+
+    Connections {
+        target: loginPage
+        function onSetUsername(username) {
+            logic.setUsername(username)
+        }
+    }
+
+    Connections {
+        target: menuPage
+        function onFindRooms() {
+            logic.findRooms()
+        }
+
+        function onCreateRoom() {
+            // logic.createRoom()
+        }
+    }
+
+    Connections {
+        target: roomsPage
+        function onBackClicked() {
+            logic.undoTransition()
+        }
+
+        function onReloadRooms() {
+            logic.findRooms()
         }
     }
 }
