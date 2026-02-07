@@ -22,7 +22,8 @@ public:
         BACK,
         SEARCH_ROOMS,
         CREATE_ROOM,
-        JOINED_ROOM
+        JOINED_ROOM,
+        LEFT_ROOM
     };
     Q_ENUM(Events);
 

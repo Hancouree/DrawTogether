@@ -40,4 +40,11 @@ void Notification::setVisible(const bool& v)
     emit visibleChanged();
 }
 
+void Notification::setColor(const QString &c)
+{
+    if (_color == c) return;
+    _color = c;
+    emit colorChanged();
+}
+
 Notification::~Notification() {}

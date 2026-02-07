@@ -56,7 +56,7 @@ CardPage {
         anchors.centerIn: parent
 
         Rectangle {
-            width: 0.6 * root.width
+            width: 0.6 * root.innerWidth
             height: 64
             radius: 14
             color: "#f6f7fb"
@@ -112,7 +112,7 @@ CardPage {
         }
 
         Rectangle {
-            width: 0.4 * root.width
+            width: 0.4 * root.innerWidth
             height: 1
             color: "gray"
             radius: 5

@@ -67,7 +67,7 @@ Item {
                         spacing: 10
 
                         delegate: Item {
-                            width: parent.width
+                            width: listView.width
                             height: childrenRect.height
 
                             Rectangle {
@@ -102,7 +102,7 @@ Item {
                                     borderWidth: 0
                                     color: "transparent"
                                     Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
-                                    visible: root.roomInfo.isLeader && !model.isLeader //model - is a pointer to some user in room
+                                    visible: root.roomInfo.isMeLeader && !model.isLeader //model - is a pointer to some user in room
 
                                     Image {
                                         anchors.fill: parent
@@ -145,7 +145,7 @@ Item {
 
                     RectButton {
                         id: startBtn
-                        width: 90
+                        width: visible ? 90 : 0
                         height: 30
                         text: "Start"
                         fontColor: "white"
@@ -155,7 +155,8 @@ Item {
                         borderWidth: 0
                         radius: 5
                         scale: hovered ? 1.1 : 1
-                        visible: root.roomInfo.isLeader
+                        visible: root.roomInfo.isMeLeader
+                        clip: true
                         onClicked: root.startRoom()
 
                         Behavior on scale {

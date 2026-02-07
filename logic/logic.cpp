@@ -23,6 +23,7 @@ Logic::Logic(QObject *parent)
 {
     connect(_requestManager, &RequestManager::connectionChanged, this, [this](){ emit connectionChanged(); });
     connect(_requestManager, &RequestManager::connectionFailed, this, [this](){ emit connectionFailed(); });
+    connect(_requestManager, &RequestManager::messageReceived, this, &Logic::onMessageReceived);
     connect(&_state, &FSM::stateChanged, this, [this]() { emit stateChanged(); });
 }
 
@@ -50,9 +51,6 @@ void Logic::findRooms()
 
     _requestManager->request(json, TIMEOUT)
         .then([this](const QJsonObject& answer) {
-            if (answer["cmd"] != "find_rooms_result")
-                return;
-
             qDebug() << "ANSWER FIND ROOMS: " << answer << "\n";
 
             const QJsonArray rooms = answer["rooms"].toArray();
@@ -95,19 +93,15 @@ void Logic::createRoom(const QString& roomName, const int& maxCapacity)
 
     _requestManager->request(json, TIMEOUT)
         .then([this](const QJsonObject& answer) {
+            const QString myUid = answer["uid"].toString();
+
             _roomInfo->setRid(answer["rid"].toString());
             _roomInfo->setName(answer["name"].toString());
             _roomInfo->setMaxCapacity(answer["maxCapacity"].toInt());
-            _roomInfo->setIsLeader(true);
+            _roomInfo->setMyUid(myUid);
+            _roomInfo->setLeaderUid(myUid);
 
-            QJsonArray users = answer["users"].toArray();
-            for (const QJsonValue& user : users) {
-                _roomInfo->pushParticipant(
-                    user["uid"].toString(),
-                    user["username"].toString(),
-                    user["isLeader"].toBool()
-                );
-            }
+            parseUsers(answer["users"].toArray());
 
             _state.applyEvent(FSM::JOINED_ROOM);
         })
@@ -118,7 +112,6 @@ void Logic::createRoom(const QString& roomName, const int& maxCapacity)
 
 void Logic::joinRoom(const QString &rid)
 {
-    qDebug() << "JOIN ROOM CLICKED\n";
     QJsonObject json;
     json["cmd"] = "join_room";
     json["username"] = _username;
@@ -129,22 +122,120 @@ void Logic::joinRoom(const QString &rid)
             _roomInfo->setRid(answer["rid"].toString());
             _roomInfo->setName(answer["name"].toString());
             _roomInfo->setMaxCapacity(answer["maxCapacity"].toInt());
-            _roomInfo->setIsLeader(false);
+            _roomInfo->setMyUid(answer["uid"].toString());
+            _roomInfo->setLeaderUid(answer["leaderUid"].toString());
 
-            QJsonArray users = answer["users"].toArray();
-            for (const QJsonValue& user : users) {
-                _roomInfo->pushParticipant(
-                    user["uid"].toString(),
-                    user["username"].toString(),
-                    user["isLeader"].toBool()
-                );
-            }
+            parseUsers(answer["users"].toArray());
 
             _state.applyEvent(FSM::JOINED_ROOM);
         })
         .catchError([this](const QJsonObject& error) {
             _notificationManager->error(error["error_message"].toString());
         });
+}
+
+void Logic::leaveRoom()
+{
+    QJsonObject json;
+    json["cmd"] = "leave_room";
+    json["rid"] = _roomInfo->rid();
+
+    _requestManager->request(json, TIMEOUT)
+        .then([this](const QJsonObject& answer) {
+            qDebug() << answer << "\n";
+            if (answer["ok"].toBool()) {
+                _roomInfo->clearParticipants();
+                _state.applyEvent(FSM::LEFT_ROOM);
+            }
+            else
+                _notificationManager->error("Something occurred, try once more");
+        })
+        .catchError([this](const QJsonObject error) {
+            _notificationManager->error(error["error_message"].toString());
+        });
+}
+
+void Logic::onMessageReceived(const QString &message)
+{
+    QJsonDocument doc = QJsonDocument::fromJson(message.toUtf8());
+    if (doc.isNull()) {
+        qDebug() << "Message contains an invalid JSON\n";
+        return;
+    }
+
+    QJsonObject root = doc.object();
+
+    const QString& request = root["cmd"].toString();
+
+    QVector<std::function<bool()>> handlers = {
+        [this, &request, &root]() { return onUserJoined(request, root); },
+        [this, &request, &root]() { return onUserLeft(request, root); },
+        [this, &request, &root]() { return onLeaderChanged(request, root); }
+    };
+
+    for(auto& handler : handlers) {
+        if (handler())
+            return;
+    }
+
+    qDebug() << "Request was not processed: " << message << "\n";
+}
+
+bool Logic::onUserJoined(const QString &request, QJsonObject &root)
+{
+    if (request != "user_joined")
+        return false;
+
+    const QString rid = root["rid"].toString();
+    if (rid == _roomInfo->rid()) {
+        auto user = root["user"].toObject();
+        _roomInfo->pushParticipant(
+            user["uid"].toString(),
+            user["username"].toString(),
+            user["isLeader"].toBool()
+        );
+        _notificationManager->notification("User joined!");
+    }
+
+    return true;
+}
+
+bool Logic::onUserLeft(const QString &request, QJsonObject &root)
+{
+    if (request != "user_left")
+        return false;
+
+    const QString rid = root["rid"].toString();
+    if (rid == _roomInfo->rid()) {
+        _roomInfo->removeParticipant(root["leftUid"].toString());
+        _notificationManager->notification("User left!");
+    }
+
+    return true;
+}
+
+bool Logic::onLeaderChanged(const QString &request, QJsonObject &root)
+{
+    if (request != "leader_changed")
+        return false;
+
+    const QString rid = root["rid"].toString();
+    if (_roomInfo->rid() == rid) {
+        _roomInfo->setLeader(root["leaderUid"].toString());
+    }
+
+    return true;
+}
+
+void Logic::parseUsers(const QJsonArray &users)
+{
+    for (const QJsonValue& user : users) {
+        _roomInfo->pushParticipant(
+            user["uid"].toString(),
+            user["username"].toString(),
+            user["isLeader"].toBool()
+        );
+    }
 }
 
 Logic::~Logic() {}

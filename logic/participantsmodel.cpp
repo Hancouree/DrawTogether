@@ -1,6 +1,6 @@
 #include "participantsmodel.h"
 
-ParticipantsModel::ParticipantsModel(QObject* parent) : QAbstractTableModel(parent) {}
+ParticipantsModel::ParticipantsModel(QObject* parent) : QAbstractListModel(parent) {}
 
 int ParticipantsModel::rowCount(const QModelIndex &index) const
 {
@@ -43,11 +43,55 @@ void ParticipantsModel::pushParticipant(Participant* p)
     endInsertRows();
 }
 
+void ParticipantsModel::removeParticipant(const QString &uid)
+{
+    int row = -1;
+    Participant* erased = nullptr;
+
+    for (int i = 0; i < participants.size(); ++i) {
+        if (participants[i]->id() == uid) {
+            row = i;
+            erased = participants[i];
+            break;
+        }
+    }
+
+    if (row == -1 || !erased)
+        return;
+
+    beginRemoveRows(QModelIndex(), row, row);
+
+    participants.removeAt(row);
+    erased->deleteLater();
+
+    endRemoveRows();
+}
+
 void ParticipantsModel::clear()
 {
+    if (participants.empty())
+        return;
+
     beginRemoveRows(QModelIndex(), 0, participants.size() - 1);
+
+    qDeleteAll(participants);
     participants.clear();
-    endInsertRows();
+
+    endRemoveRows();
+}
+
+void ParticipantsModel::setLeader(const QString &leaderUid)
+{
+    for (int i = 0; i < participants.size(); ++i) {
+        auto* p = participants[i];
+        if (p->id() == leaderUid) {
+            p->setIsLeader(true);
+
+            QModelIndex idx = index(i, 0);
+            emit dataChanged(idx, idx, {IsLeaderRole});
+        } else
+            p->setIsLeader(false);
+    }
 }
 
 ParticipantsModel::~ParticipantsModel() {}

@@ -4,6 +4,8 @@ import QtQuick.Effects
 Item {
     id: root
 
+    property int innerWidth: innerRect.width
+    property int innerHeight: innerRect.height
     default property alias content: innerRect.data
 
     Rectangle {

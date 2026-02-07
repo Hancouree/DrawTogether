@@ -10,7 +10,7 @@ Rectangle {
     Layout.maximumHeight: notification && notification.visible ? 80 : 0
     opacity: notification && notification.visible ? 1.0 : 0.0
     visible: opacity > 0
-    color: "#F44336"
+    color: notification.color
     radius: 8
     clip: true
 

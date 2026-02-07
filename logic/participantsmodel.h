@@ -29,7 +29,7 @@ private:
     bool _isLeader;
 };
 
-class ParticipantsModel : public QAbstractTableModel
+class ParticipantsModel : public QAbstractListModel
 {
     Q_OBJECT
 public:
@@ -46,8 +46,10 @@ public:
     int columnCount(const QModelIndex& index = QModelIndex()) const override;
     QVariant data(const QModelIndex& index, int role) const override;
     QHash<int, QByteArray> roleNames() const override;
-    void pushParticipant(Participant*p);
+    void pushParticipant(Participant* p);
+    void removeParticipant(const QString& uid);
     void clear();
+    void setLeader(const QString& leaderUid);
 private:
     QVector<Participant*> participants;
 };

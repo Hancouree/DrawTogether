@@ -29,10 +29,9 @@ public:
 signals:
     void connectionFailed();
     void connectionChanged();
-
+    void messageReceived(const QString& message);
 private slots:
     void onMessage(const QString& message);
-
 private:
     QWebSocket* _socket = nullptr;
     QHash<QString, Request*> pendingRequests;

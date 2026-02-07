@@ -39,12 +39,20 @@ public slots:
     void openRoomCreationPage();
     void createRoom(const QString& roomName, const int& maxCapacity);
     void joinRoom(const QString& rid);
+    void leaveRoom();
+private slots:
+    void onMessageReceived(const QString& message);
+    bool onUserJoined(const QString &request, QJsonObject &root);
+    bool onUserLeft(const QString& request, QJsonObject& root);
+    bool onLeaderChanged(const QString& request, QJsonObject& root);
 signals:
     void connectionChanged();
     void connectionFailed();
     void usernameChanged();
     void stateChanged();
 private:
+    void parseUsers(const QJsonArray& users);
+
     QString _username;
     RequestManager* _requestManager;
     FSM _state;

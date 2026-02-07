@@ -15,6 +15,8 @@ Window {
         id: stackView
         anchors.fill: parent
         initialItem: connectionPage
+        replaceEnter: Transition { NumberAnimation { property: "opacity"; from: 0; to: 1; duration: 200 } }
+        replaceExit: Transition { NumberAnimation { property: "opacity"; from: 1; to: 0; duration: 200 } }
     }
 
     NotificationsContainer {
@@ -154,7 +156,7 @@ Window {
     Connections {
         target: roomPage
         function onLeaveRoom() {
-
+            logic.leaveRoom()
         }
 
         function onStartRoom() {

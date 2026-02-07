@@ -139,6 +139,12 @@ void RequestManager::onMessage(const QString &message)
     }
 
     const QJsonObject root = doc.object();
+
+    if (root["type"] == "message") {
+        emit messageReceived(message);
+        return;
+    }
+
     const QString rid = root["requestId"].toString();
 
     if (rid.isEmpty()) {

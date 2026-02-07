@@ -14,6 +14,7 @@ public:
     QList<Notification*> notifications() const { return _notifications; }
 
     Q_INVOKABLE void error(const QString &message, const QString &title = "Error");
+    Q_INVOKABLE void notification(const QString& message, const QString& title = "Notification");
 signals:
     void notificationsChanged();
 private:
