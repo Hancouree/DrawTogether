@@ -1,7 +1,25 @@
 #include "logic.h"
 
+QString toTimeAgo(qint64 timestamp) {
+    auto now = QDateTime::currentDateTime();
+    auto then = QDateTime::fromMSecsSinceEpoch(timestamp);
+    qint64 secs = qAbs(then.secsTo(now));
+    QString suffix = (timestamp < now.toMSecsSinceEpoch()) ? "ago" : "later";
+
+    if (secs < 60) return "just now";
+    if (secs < 3600) return QString("%1 m. %2").arg(secs/60).arg(suffix);
+    if (secs < 86400) return QString("%1 h. %2").arg(secs/3600).arg(suffix);
+    if (secs < 2592000) return QString("%1 d. %2").arg(secs/86400).arg(suffix);
+    if (secs < 31536000) return QString("%1 mo. %2").arg(secs/2592000).arg(suffix);
+    return QString("%1 y. %2").arg(secs/31536000).arg(suffix);
+}
+
 Logic::Logic(QObject *parent)
-    : QObject(parent), _requestManager(new RequestManager(QUrl(("wss://26.209.218.198:5050")), this)), _roomsModel(new RoomsModel(this))
+    : QObject(parent),
+    _requestManager(new RequestManager(QUrl(("wss://26.209.218.198:5050")), this)),
+    _roomsModel(new RoomsModel(this)),
+    _roomInfo(new RoomInfo(this)),
+    _notificationManager(new NotificationManager(this))
 {
     connect(_requestManager, &RequestManager::connectionChanged, this, [this](){ emit connectionChanged(); });
     connect(_requestManager, &RequestManager::connectionFailed, this, [this](){ emit connectionFailed(); });
@@ -17,6 +35,7 @@ void Logic::setUsername(const QString &username)
 {
     _username = username;
     _state.applyEvent(FSM::USERNAME_ESTABLISHED);
+    emit usernameChanged();
 }
 
 void Logic::findRooms()
@@ -24,18 +43,34 @@ void Logic::findRooms()
     if (_roomsModel->count() > 0)
         _roomsModel->clear();
 
-    QJsonObject root;
-    root["cmd"] = "find_rooms";
-    root["limit"] = 10;
-    root["offset"] = (int)_roomsModel->offset();
-    root["timestamp"] = QDateTime::currentMSecsSinceEpoch();
+    QJsonObject json;
+    json["cmd"] = "find_rooms";
+    json["limit"] = LIMIT;
+    json["offset"] = _roomsModel->count();
 
-    _requestManager->request(root, 5000)
+    _requestManager->request(json, TIMEOUT)
         .then([this](const QJsonObject& answer) {
-            qDebug() << "Hello: " << answer << '\n';
+            if (answer["cmd"] != "find_rooms_result")
+                return;
+
+            qDebug() << "ANSWER FIND ROOMS: " << answer << "\n";
+
+            const QJsonArray rooms = answer["rooms"].toArray();
+            for (const QJsonValue& room : rooms) {
+
+                const QString& rid = room["rid"].toString(), timeAgo = toTimeAgo(room["created_at"].toInteger()),
+                    name = room["name"].toString();
+                const int currentlyUsers = room["currently_users"].toInt(), maxCapacity = room["max_capacity"].toInt();
+
+                _roomsModel->pushRoom(RoomsModel::Room({ rid, name, timeAgo, (unsigned int)maxCapacity, (unsigned int)currentlyUsers }));
+            }
+
             _roomsModel->setLoading(false);
         })
-        .catchError([this](const QJsonObject& error) { _roomsModel->setLoading(false); });
+        .catchError([this](const QJsonObject& error) {
+            _notificationManager->error(error["error_message"].toString());
+            _roomsModel->setLoading(false);
+        });
     _roomsModel->setLoading(true);
     _state.applyEvent(FSM::SEARCH_ROOMS);
 }
@@ -45,9 +80,71 @@ void Logic::undoTransition()
     _state.applyEvent(FSM::BACK);
 }
 
-void Logic::createRoom()
+void Logic::openRoomCreationPage()
 {
-    qDebug() << "Create room called\n";
+    _state.applyEvent(FSM::CREATE_ROOM);
+}
+
+void Logic::createRoom(const QString& roomName, const int& maxCapacity)
+{
+    QJsonObject json;
+    json["cmd"] = "create_room";
+    json["name"] = roomName;
+    json["username"] = _username;
+    json["max_capacity"] = maxCapacity;
+
+    _requestManager->request(json, TIMEOUT)
+        .then([this](const QJsonObject& answer) {
+            _roomInfo->setRid(answer["rid"].toString());
+            _roomInfo->setName(answer["name"].toString());
+            _roomInfo->setMaxCapacity(answer["maxCapacity"].toInt());
+            _roomInfo->setIsLeader(true);
+
+            QJsonArray users = answer["users"].toArray();
+            for (const QJsonValue& user : users) {
+                _roomInfo->pushParticipant(
+                    user["uid"].toString(),
+                    user["username"].toString(),
+                    user["isLeader"].toBool()
+                );
+            }
+
+            _state.applyEvent(FSM::JOINED_ROOM);
+        })
+        .catchError([this](const QJsonObject& error) {
+            _notificationManager->error(error["error_message"].toString());
+        });
+}
+
+void Logic::joinRoom(const QString &rid)
+{
+    qDebug() << "JOIN ROOM CLICKED\n";
+    QJsonObject json;
+    json["cmd"] = "join_room";
+    json["username"] = _username;
+    json["rid"] = rid;
+
+    _requestManager->request(json, TIMEOUT)
+        .then([this](const QJsonObject& answer) {
+            _roomInfo->setRid(answer["rid"].toString());
+            _roomInfo->setName(answer["name"].toString());
+            _roomInfo->setMaxCapacity(answer["maxCapacity"].toInt());
+            _roomInfo->setIsLeader(false);
+
+            QJsonArray users = answer["users"].toArray();
+            for (const QJsonValue& user : users) {
+                _roomInfo->pushParticipant(
+                    user["uid"].toString(),
+                    user["username"].toString(),
+                    user["isLeader"].toBool()
+                );
+            }
+
+            _state.applyEvent(FSM::JOINED_ROOM);
+        })
+        .catchError([this](const QJsonObject& error) {
+            _notificationManager->error(error["error_message"].toString());
+        });
 }
 
 Logic::~Logic() {}

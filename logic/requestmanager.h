@@ -7,7 +7,9 @@
 #include <QJsonObject>
 #include <QHash>
 #include <QUuid>
+// #include <QDateTime>
 
+#define TIMEOUT 5000
 #define MAX_CONNECTION_ATTEMPTS 2
 
 class Request;

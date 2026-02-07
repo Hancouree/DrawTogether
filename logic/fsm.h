@@ -12,7 +12,8 @@ public:
         LOGIN,
         MENU,
         SEARCHING_ROOMS,
-        CREATING_ROOM
+        CREATING_ROOM,
+        IN_ROOM
     };
     Q_ENUM(States)
 
@@ -20,7 +21,8 @@ public:
         USERNAME_ESTABLISHED,
         BACK,
         SEARCH_ROOMS,
-        CREATE_ROOM
+        CREATE_ROOM,
+        JOINED_ROOM
     };
     Q_ENUM(Events);
 

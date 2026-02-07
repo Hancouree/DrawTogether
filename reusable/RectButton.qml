@@ -6,8 +6,13 @@ Item {
     property alias text: innerText.text
     property alias textColor: innerText.color
     property alias fontSize: innerText.font.pixelSize
+    property alias fontWeight: innerText.font.weight
+    property alias fontColor: innerText.color
     property alias hovered: button.hovered
     property alias borderWidth: button.border.width
+    property alias radius: button.radius
+    property alias color: button.color
+    signal clicked()
 
     Rectangle {
         id: button
@@ -24,6 +29,12 @@ Item {
         Text {
             id: innerText
             anchors.centerIn: parent
+        }
+
+        MouseArea {
+            cursorShape: Qt.PointingHandCursor
+            anchors.fill: parent
+            onClicked: root.clicked()
         }
     }
 }

@@ -27,11 +27,31 @@ qt_add_qml_module(appDrawTogether
         QML_FILES reusable/Spinner.qml
         QML_FILES components/MenuPage.qml
         SOURCES logic/roomsmodel.h logic/roomsmodel.cpp
-        QML_FILES components/RoomsPage.qml
+        QML_FILES components/SearchRoomsPage.qml
         QML_FILES components/RoomSkeleton.qml
         SOURCES logic/fsm.h logic/fsm.cpp
         SOURCES logic/requestmanager.h logic/requestmanager.cpp
         SOURCES
+        QML_FILES components/Room.qml
+        RESOURCES icons/arrow.png icons/reload.png
+        QML_FILES components/RoomCreationPage.qml
+        QML_FILES
+        QML_FILES reusable/CardPage.qml
+        QML_FILES reusable/CustomCombobox.qml
+        QML_FILES reusable/UserIcon.qml
+        QML_FILES components/RoomPage.qml
+        SOURCES
+        SOURCES
+        SOURCES logic/participantsmodel.h logic/participantsmodel.cpp
+        SOURCES logic/roominfo.h logic/roominfo.cpp
+        RESOURCES
+        SOURCES
+        SOURCES logic/notificationmanager.h logic/notificationmanager.cpp
+        SOURCES logic/notification.h logic/notification.cpp
+        QML_FILES components/Notification.qml
+        QML_FILES components/NotificationsContainer.qml
+        RESOURCES icons/kick.png
+        RESOURCES
 )
 
 set_target_properties(appDrawTogether PROPERTIES

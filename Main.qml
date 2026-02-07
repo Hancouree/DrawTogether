@@ -17,6 +17,12 @@ Window {
         initialItem: connectionPage
     }
 
+    NotificationsContainer {
+        anchors.fill: parent
+        z: 9999
+        notificationManager: logic.notificationManager
+    }
+
     ConnectionPage {
         id: connectionPage
         visible: true
@@ -32,17 +38,29 @@ Window {
         visible: false
     }
 
-    RoomsPage {
-        id: roomsPage
-        visible: false
-        model: logic.roomsModel
+    SearchRoomsPage {
+        id: searchRoomsPage
         isInfoLoading: logic.roomsModel.loading
+        model: logic.roomsModel
+        visible: false
+    }
+
+    RoomCreationPage {
+        id: roomCreationPage
+        username: logic.username
+        visible: false
+    }
+
+    RoomPage {
+        id: roomPage
+        roomInfo: logic.roomInfo
+        visible: false
     }
 
     Connections {
         target: logic
         function onConnectionChanged() {
-            if (!logic.connected) {
+            if (!root.connected) {
                 if (stackView.currentItem !== connectionPage) {
                     stackView.push(connectionPage)
                 }
@@ -62,16 +80,20 @@ Window {
         function onStateChanged() {
             console.log("Current state: ", logic.state)
             switch(logic.state) {
-            case 0: //LOGIN
+            case FSM.LOGIN:
                 stackView.replace(loginPage)
-                break;
-            case 1: //MENU
+                break
+            case FSM.MENU:
                 stackView.replace(menuPage)
                 break
-            case 2: //SEARCHING_ROOMS
-                stackView.replace(roomsPage);
-            case 3: //CREATING_ROOM
-                console.log("Creating room is not yet implemented")
+            case FSM.SEARCHING_ROOMS:
+                stackView.replace(searchRoomsPage);
+                break
+            case FSM.CREATING_ROOM:
+                stackView.replace(roomCreationPage)
+                break
+            case FSM.IN_ROOM:
+                stackView.replace(roomPage)
                 break;
             }
         }
@@ -80,8 +102,8 @@ Window {
     Connections {
         target: connectionPage
         function onConnectOnceMore() {
-            logic.connectOnceMore()
             connectionPage.connectionFailed = false
+            logic.connectOnceMore()
         }
     }
 
@@ -99,18 +121,44 @@ Window {
         }
 
         function onCreateRoom() {
-            // logic.createRoom()
+            logic.openRoomCreationPage()
         }
     }
 
     Connections {
-        target: roomsPage
+        target: searchRoomsPage
         function onBackClicked() {
             logic.undoTransition()
         }
 
+        function onRoomClicked(rid) {
+            logic.joinRoom(rid)
+        }
+
         function onReloadRooms() {
             logic.findRooms()
+        }
+    }
+
+    Connections {
+        target: roomCreationPage
+        function onBackClicked() {
+            logic.undoTransition()
+        }
+
+        function onCreateRoom(roomName, maxCapacity) {
+            logic.createRoom(roomName, maxCapacity)
+        }
+    }
+
+    Connections {
+        target: roomPage
+        function onLeaveRoom() {
+
+        }
+
+        function onStartRoom() {
+
         }
     }
 }

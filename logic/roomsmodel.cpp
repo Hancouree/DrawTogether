@@ -1,6 +1,6 @@
 #include "roomsmodel.h"
 
-RoomsModel::RoomsModel(QObject* parent) : QAbstractTableModel(parent), _loading(false), _offset(0) {}
+RoomsModel::RoomsModel(QObject* parent) : QAbstractTableModel(parent), _loading(false) {}
 
 int RoomsModel::rowCount(const QModelIndex &parent) const
 {
@@ -14,15 +14,17 @@ int RoomsModel::count() const
 
 int RoomsModel::columnCount(const QModelIndex &parent) const
 {
-    return 3;
+    return 5;
 }
 
 QHash<int, QByteArray> RoomsModel::roleNames() const
 {
     QHash<int, QByteArray> roleNames;
-    roleNames[RidRole] = "Rid";
+    roleNames[RidRole] = "rid";
     roleNames[NameRole] = "name";
-    roleNames[IsCreatedByMeRole] = "isCreatedByMe";
+    roleNames[CreatedAtRole] = "createdAt";
+    roleNames[MaxCapacityRole] = "maxCapacity";
+    roleNames[CurrentlyUsersRole] = "currentlyUsers";
 
     return roleNames;
 }
@@ -41,7 +43,11 @@ QVariant RoomsModel::data(const QModelIndex &index, int role) const
         case 1:
             return row.name;
         case 2:
-            return row.isCreatedByMe;
+            return row.createdAt;
+        case 3:
+            return row.maxCapacity;
+        case 4:
+            return row.currentlyUsers;
         default:
             return QVariant();
         }
@@ -53,8 +59,14 @@ QVariant RoomsModel::data(const QModelIndex &index, int role) const
     case NameRole:
         return row.name;
 
-    case IsCreatedByMeRole:
-        return row.isCreatedByMe;
+    case CreatedAtRole:
+        return row.createdAt;
+
+    case MaxCapacityRole:
+        return row.maxCapacity;
+
+    case CurrentlyUsersRole:
+        return row.currentlyUsers;
 
     default:
         return QVariant();
@@ -75,16 +87,11 @@ void RoomsModel::setLoading(const bool &loading)
     emit loadingChanged();
 }
 
-void RoomsModel::setOffset(const unsigned int &offset)
-{
-    _offset = offset;
-}
 
 void RoomsModel::clear()
 {
     beginRemoveRows(QModelIndex(), 0, _rooms.size() - 1);
     _rooms.clear();
-    _offset = 0;
     endRemoveRows();
 }
 

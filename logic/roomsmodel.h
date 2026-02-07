@@ -11,8 +11,9 @@ public:
     struct Room {
         QString rid;
         QString name;
-        QString createdAt; // add it to the rolenames
-        bool isCreatedByMe;
+        QString createdAt;
+        unsigned int maxCapacity;
+        unsigned currentlyUsers;
     };
 
     RoomsModel(QObject* parent = nullptr);
@@ -24,11 +25,9 @@ public:
     QHash<int, QByteArray> roleNames() const override;
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
     bool loading() const { return _loading; }
-    unsigned int offset() const { return _offset; }
 
     void pushRoom(const Room& room);
     void setLoading(const bool& loading);
-    void setOffset(const unsigned int& offset);
     void clear();
 signals:
     void loadingChanged();
@@ -36,13 +35,14 @@ private:
     enum RoomsRoles {
         RidRole = Qt::UserRole + 1,
         NameRole,
-        IsCreatedByMeRole
+        CreatedAtRole,
+        MaxCapacityRole,
+        CurrentlyUsersRole
     };
     Q_ENUM(RoomsRoles)
 
     QVector<Room> _rooms;
     bool _loading;
-    unsigned int _offset;
 };
 
 #endif // ROOMSMODEL_H

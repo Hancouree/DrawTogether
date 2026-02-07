@@ -12,11 +12,13 @@ FSM::FSM(QObject* parent) : QObject(parent),  _state(LOGIN) {
                },
         },
         {SEARCHING_ROOMS, {
-                            {BACK, MENU}
+                            {BACK, MENU},
+                            {JOINED_ROOM, IN_ROOM}
                           }
         },
         {CREATING_ROOM, {
-                            {BACK, MENU}
+                            {BACK, MENU},
+                            {JOINED_ROOM, IN_ROOM}
                         }
         }
     };

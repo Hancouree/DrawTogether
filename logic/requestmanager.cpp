@@ -11,7 +11,7 @@ Request::Request(int timeoutMs, QObject* parent)
 
     connect(&timeoutTimer, &QTimer::timeout, this, [this]() {
         emit requestFailed(QJsonObject{
-            { "error", "timeout" }
+            { "cmd", "error" }, { "error_message", "Request expired" }
         });
     });
 
@@ -68,7 +68,6 @@ RequestManager::RequestManager(const QUrl& url, QObject *parent)
             connectionTimer.stop();
         }
         connectionAttempts = 0;
-        qDebug() << "Connected successfully\n";
     });
 
     connect(_socket, &QWebSocket::textMessageReceived, this, &RequestManager::onMessage);
@@ -111,6 +110,7 @@ Request& RequestManager::request(QJsonObject& json, const int& timeoutMs)
 
     pendingRequests.insert(req->rid(), req);
     json["requestId"] = req->rid();
+    json["timestamp"] = QDateTime::currentMSecsSinceEpoch();
 
     connect(req, &Request::requestFailed, this,
             [this, req](const QJsonObject& error) {
@@ -142,11 +142,14 @@ void RequestManager::onMessage(const QString &message)
     const QString rid = root["requestId"].toString();
 
     if (rid.isEmpty()) {
-        qDebug() << "Message without requestId ignored";
+        qDebug() << "Message without requestId ignored\n";
         return;
     }
 
     if (pendingRequests.contains(rid)) {
-        emit pendingRequests[rid]->requestDone(root);
+        if (root["cmd"] != "error")
+            emit pendingRequests[rid]->requestDone(root);
+        else
+            emit pendingRequests[rid]->requestFailed(root);
     }
 }
