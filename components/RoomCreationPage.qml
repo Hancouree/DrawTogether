@@ -5,13 +5,11 @@ CardPage {
     id: root
 
     property string username: ""
-    signal backClicked()
-    signal createRoom(string roomName, int maxCapacity)
 
     function handleCreateRoom() {
         const title = roomName.text.trim(), maxCapacity = combobox.currentValue
         if (title.length >= 3 && title.length < 20) {
-            root.createRoom(title, maxCapacity)
+            logic.createRoom(title, maxCapacity)
             roomName.clear()
         }
     }
@@ -23,7 +21,7 @@ CardPage {
         anchors.top: parent.top
         anchors.left: parent.left
         anchors.margins: 10
-        onClicked: root.backClicked()
+        onClicked: logic.undoTransition()
 
         Image {
             width: parent.width

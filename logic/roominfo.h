@@ -21,6 +21,7 @@ public:
     QString name() const { return _name; }
     int maxCapacity() const { return _maxCapacity; }
     int participantsCount() const { return model->rowCount(); }
+    QString uid() const { return myUid; }
     bool isMeLeader() const { return myUid == leaderUid; }
     ParticipantsModel* participants() const { return model; }
 

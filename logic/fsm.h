@@ -13,7 +13,8 @@ public:
         MENU,
         SEARCHING_ROOMS,
         CREATING_ROOM,
-        IN_ROOM
+        IN_ROOM,
+        IN_GAME
     };
     Q_ENUM(States)
 
@@ -23,7 +24,9 @@ public:
         SEARCH_ROOMS,
         CREATE_ROOM,
         JOINED_ROOM,
-        LEFT_ROOM
+        LEFT_ROOM,
+        KICKED,
+        ROOM_STARTED
     };
     Q_ENUM(Events);
 

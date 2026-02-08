@@ -15,8 +15,32 @@ Window {
         id: stackView
         anchors.fill: parent
         initialItem: connectionPage
-        replaceEnter: Transition { NumberAnimation { property: "opacity"; from: 0; to: 1; duration: 200 } }
-        replaceExit: Transition { NumberAnimation { property: "opacity"; from: 1; to: 0; duration: 200 } }
+
+        replaceEnter: Transition {
+            PropertyAnimation {
+                property: "x"
+                from: stackView.width * 0.3
+                to: 0
+                duration: 400
+                easing.type: Easing.OutCubic
+            }
+
+            PropertyAnimation {
+                property: "opacity"
+                from: 0.0
+                to: 1.0
+                duration: 400
+            }
+        }
+
+        replaceExit: Transition {
+            PropertyAnimation {
+                property: "opacity"
+                from: 1.0
+                to: 0.0
+                duration: 400
+            }
+        }
     }
 
     NotificationsContainer {
@@ -30,35 +54,6 @@ Window {
         visible: true
     }
 
-    LoginPage {
-        id: loginPage
-        visible: false
-    }
-
-    MenuPage {
-        id: menuPage
-        visible: false
-    }
-
-    SearchRoomsPage {
-        id: searchRoomsPage
-        isInfoLoading: logic.roomsModel.loading
-        model: logic.roomsModel
-        visible: false
-    }
-
-    RoomCreationPage {
-        id: roomCreationPage
-        username: logic.username
-        visible: false
-    }
-
-    RoomPage {
-        id: roomPage
-        roomInfo: logic.roomInfo
-        visible: false
-    }
-
     Connections {
         target: logic
         function onConnectionChanged() {
@@ -70,97 +65,42 @@ Window {
                 if (stackView.depth > 1) {
                     stackView.pop()
                 } else {
-                    stackView.replace(loginPage)
+                    stackView.replace("components/LoginPage.qml")
                 }
             }
         }
 
         function onConnectionFailed() {
-            connectionPage.connectionFailed = true
+            if (stackView.currentItem.hasOwnProperty("connectionFailed")) {
+                stackView.currentItem.connectionFailed = true
+            }
         }
 
         function onStateChanged() {
             console.log("Current state: ", logic.state)
             switch(logic.state) {
             case FSM.LOGIN:
-                stackView.replace(loginPage)
+                stackView.replace("components/LoginPage.qml")
                 break
             case FSM.MENU:
-                stackView.replace(menuPage)
+                stackView.replace("components/MenuPage.qml")
                 break
             case FSM.SEARCHING_ROOMS:
-                stackView.replace(searchRoomsPage);
+                stackView.replace("components/SearchRoomsPage.qml", {
+                    "rooms": logic.roomsModel
+                })
                 break
             case FSM.CREATING_ROOM:
-                stackView.replace(roomCreationPage)
+                stackView.replace("components/RoomCreationPage.qml", {
+                    "username": logic.username
+                })
                 break
             case FSM.IN_ROOM:
-                stackView.replace(roomPage)
+                stackView.replace("components/RoomPage.qml", {
+                    "roomInfo": logic.roomInfo
+                })
                 break;
             }
-        }
-    }
-
-    Connections {
-        target: connectionPage
-        function onConnectOnceMore() {
-            connectionPage.connectionFailed = false
-            logic.connectOnceMore()
-        }
-    }
-
-    Connections {
-        target: loginPage
-        function onSetUsername(username) {
-            logic.setUsername(username)
-        }
-    }
-
-    Connections {
-        target: menuPage
-        function onFindRooms() {
-            logic.findRooms()
-        }
-
-        function onCreateRoom() {
-            logic.openRoomCreationPage()
-        }
-    }
-
-    Connections {
-        target: searchRoomsPage
-        function onBackClicked() {
-            logic.undoTransition()
-        }
-
-        function onRoomClicked(rid) {
-            logic.joinRoom(rid)
-        }
-
-        function onReloadRooms() {
-            logic.findRooms()
-        }
-    }
-
-    Connections {
-        target: roomCreationPage
-        function onBackClicked() {
-            logic.undoTransition()
-        }
-
-        function onCreateRoom(roomName, maxCapacity) {
-            logic.createRoom(roomName, maxCapacity)
-        }
-    }
-
-    Connections {
-        target: roomPage
-        function onLeaveRoom() {
-            logic.leaveRoom()
-        }
-
-        function onStartRoom() {
-
         }
     }
 }

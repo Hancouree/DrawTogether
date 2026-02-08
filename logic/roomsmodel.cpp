@@ -1,6 +1,6 @@
 #include "roomsmodel.h"
 
-RoomsModel::RoomsModel(QObject* parent) : QAbstractTableModel(parent), _loading(false) {}
+RoomsModel::RoomsModel(QObject* parent) : QAbstractTableModel(parent), _loading(false), total(0) {}
 
 int RoomsModel::rowCount(const QModelIndex &parent) const
 {
@@ -79,6 +79,7 @@ void RoomsModel::pushRoom(const Room &room)
     beginInsertRows(QModelIndex(), size, size);
     _rooms.push_back(room);
     endInsertRows();
+    emit canLoadMoreChanged();
 }
 
 void RoomsModel::setLoading(const bool &loading)
@@ -87,12 +88,18 @@ void RoomsModel::setLoading(const bool &loading)
     emit loadingChanged();
 }
 
+void RoomsModel::setTotal(const unsigned int &total)
+{
+    this->total = total;
+    emit canLoadMoreChanged();
+}
 
 void RoomsModel::clear()
 {
     beginRemoveRows(QModelIndex(), 0, _rooms.size() - 1);
     _rooms.clear();
     endRemoveRows();
+    emit canLoadMoreChanged();
 }
 
 RoomsModel::~RoomsModel() {}

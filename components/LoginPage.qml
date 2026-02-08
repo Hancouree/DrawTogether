@@ -7,12 +7,10 @@ CardPage {
     function handleUsername() {
         const username = input.text.trim()
         if (username.length > 3) {
-            setUsername(username)
+            logic.setUsername(username)
             input.clear()
         }
     }
-
-    signal setUsername(string username)
 
     Column {
         width: input.width

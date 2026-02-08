@@ -3,13 +3,7 @@ import QtQuick
 Item {
     id: root
 
-    property string rid: ""
-    property alias setName: name.text
-    property alias setCreatedAt: createdAt.text
-    property int currentlyUsers: 0
-    property int maxCapacity: 0
-
-    signal roomClicked(string rid);
+    property var room
 
     Rectangle {
         id: rect
@@ -21,19 +15,21 @@ Item {
 
         Text {
             id: name
+            text: root.room.name
             font.pixelSize: 16
             anchors { top: parent.top; left: parent.left; topMargin: 5; leftMargin: 10 }
         }
 
         Text {
             id: users
-            text: `${root.currentlyUsers}/${root.maxCapacity}`
+            text: `${root.room.currentlyUsers}/${root.room.maxCapacity}`
             font.pixelSize: 16
             anchors { top: parent.top; right: parent.right; topMargin: 5; rightMargin: 10 }
         }
 
         Text {
             id: createdAt
+            text: root.room.createdAt
             font.pixelSize: 14
             anchors { bottom: parent.bottom; left: parent.left; bottomMargin: 5; leftMargin: 10 }
         }

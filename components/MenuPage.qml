@@ -3,9 +3,6 @@ import QtQuick
 CardPage {
     id: root
 
-    signal findRooms();
-    signal createRoom();
-
     Item {
         id: pulseContainer
         anchors.centerIn: column
@@ -66,8 +63,6 @@ CardPage {
 
     Column {
         id: column
-        // width: childrenRect.width
-        // height: childrenRect.height
         spacing: 20
         anchors.centerIn: parent
 
@@ -86,7 +81,7 @@ CardPage {
             textColor: hovered ? "green" : "black"
             fontSize: 18
             borderWidth: 0
-            onClicked: root.findRooms()
+            onClicked: logic.findRooms()
         }
 
         RectButton {
@@ -97,7 +92,7 @@ CardPage {
             textColor: hovered ? "green" : "black"
             fontSize: 18
             borderWidth: 0
-            onClicked: root.createRoom()
+            onClicked: logic.openRoomCreationPage()
         }
     }
 }

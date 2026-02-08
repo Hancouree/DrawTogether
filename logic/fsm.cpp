@@ -19,10 +19,11 @@ FSM::FSM(QObject* parent) : QObject(parent),  _state(LOGIN) {
         {CREATING_ROOM, {
                     {BACK, MENU},
                     {JOINED_ROOM, IN_ROOM}
-                        }
+        }
         },
         {IN_ROOM, {
-                    {LEFT_ROOM, MENU}
+                    {LEFT_ROOM, MENU},
+                    {KICKED, MENU}
         }}
     };
 }

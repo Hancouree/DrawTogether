@@ -4,8 +4,6 @@ CardPage {
     id: root
     property bool connectionFailed: false
 
-    signal connectOnceMore()
-
     Item {
         width: mainColumn.width
         height: mainColumn.height
@@ -32,7 +30,10 @@ CardPage {
                     height: 30
                     text: "Try once more"
                     anchors.horizontalCenter: parent.horizontalCenter
-                    onClicked: root.connectOnceMore()
+                    onClicked: {
+                        root.connectionFailed = false
+                        logic.connectOnceMore()
+                    }
                 }
             }
 

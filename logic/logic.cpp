@@ -39,9 +39,9 @@ void Logic::setUsername(const QString &username)
     emit usernameChanged();
 }
 
-void Logic::findRooms()
+void Logic::findRooms(bool refresh)
 {
-    if (_roomsModel->count() > 0)
+    if (_roomsModel->count() > 0 && refresh)
         _roomsModel->clear();
 
     QJsonObject json;
@@ -51,7 +51,8 @@ void Logic::findRooms()
 
     _requestManager->request(json, TIMEOUT)
         .then([this](const QJsonObject& answer) {
-            qDebug() << "ANSWER FIND ROOMS: " << answer << "\n";
+            qDebug() << answer;
+            _roomsModel->setTotal(answer["total"].toInt());
 
             const QJsonArray rooms = answer["rooms"].toArray();
             for (const QJsonValue& room : rooms) {
@@ -147,11 +148,28 @@ void Logic::leaveRoom()
                 _roomInfo->clearParticipants();
                 _state.applyEvent(FSM::LEFT_ROOM);
             }
-            else
-                _notificationManager->error("Something occurred, try once more");
         })
         .catchError([this](const QJsonObject error) {
             _notificationManager->error(error["error_message"].toString());
+        });
+}
+
+void Logic::kickUser(const QString &uid)
+{
+    QJsonObject json;
+    json["cmd"] = "kick";
+    json["rid"] = _roomInfo->rid();
+    json["kickedUid"] = uid;
+
+    _requestManager->request(json, TIMEOUT)
+        .then([this, uid](const QJsonObject& answer) {
+            if (answer["ok"].toBool()) {
+                _roomInfo->removeParticipant(uid);
+                 _notificationManager->notification("You've kicked the user");
+            }
+        })
+        .catchError([this](const QJsonObject& error) {
+             _notificationManager->error(error["error_message"].toString());
         });
 }
 
@@ -170,6 +188,7 @@ void Logic::onMessageReceived(const QString &message)
     QVector<std::function<bool()>> handlers = {
         [this, &request, &root]() { return onUserJoined(request, root); },
         [this, &request, &root]() { return onUserLeft(request, root); },
+        [this, &request, &root]() { return onKick(request, root); },
         [this, &request, &root]() { return onLeaderChanged(request, root); }
     };
 
@@ -202,11 +221,11 @@ bool Logic::onUserJoined(const QString &request, QJsonObject &root)
 
 bool Logic::onUserLeft(const QString &request, QJsonObject &root)
 {
-    if (request != "user_left")
-        return false;
+    if (request != "user_left") return false;
 
     const QString rid = root["rid"].toString();
     if (rid == _roomInfo->rid()) {
+        qDebug() << root;
         _roomInfo->removeParticipant(root["leftUid"].toString());
         _notificationManager->notification("User left!");
     }
@@ -214,10 +233,31 @@ bool Logic::onUserLeft(const QString &request, QJsonObject &root)
     return true;
 }
 
+bool Logic::onKick(const QString &request, QJsonObject &root)
+{
+    if (request != "user_kicked") return false;
+
+    if (_roomInfo->isMeLeader()) return true; //I've kicked already
+
+    const QString rid = root["rid"].toString();
+    if (rid == _roomInfo->rid()) {
+        const QString kickedUid = root["kickedUid"].toString();
+        if (_roomInfo->uid() == kickedUid) {
+            _roomInfo->clearParticipants();
+            _notificationManager->notification("The leader kicked you out");
+            _state.applyEvent(FSM::KICKED);
+        } else {
+            _roomInfo->removeParticipant(kickedUid);
+            _notificationManager->notification("User was kicked!");
+        }
+    }
+
+    return true;
+}
+
 bool Logic::onLeaderChanged(const QString &request, QJsonObject &root)
 {
-    if (request != "leader_changed")
-        return false;
+    if (request != "leader_changed") return false;
 
     const QString rid = root["rid"].toString();
     if (_roomInfo->rid() == rid) {

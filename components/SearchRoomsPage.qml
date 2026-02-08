@@ -4,12 +4,7 @@ import QtQuick.Controls
 Item {
     id: root
 
-    property alias model: listView.model
-    property bool isInfoLoading: false
-
-    signal backClicked()
-    signal reloadRooms()
-    signal roomClicked(string rid)
+    property var rooms
 
     Rectangle {
         id: outerRect
@@ -37,7 +32,7 @@ Item {
                         height: 30
                         borderWidth: 0
                         anchors { top: parent.top; left: parent.left; topMargin: 5; leftMargin: 10  }
-                        onClicked: root.backClicked()
+                        onClicked: logic.undoTransition()
 
                         Image {
                             width: 30
@@ -87,7 +82,7 @@ Item {
                         MouseArea {
                             anchors.fill: parent
                             cursorShape: Qt.PointingHandCursor
-                            onClicked: root.reloadRooms()
+                            onClicked: logic.findRooms()
                         }
                     }
                 }
@@ -100,7 +95,7 @@ Item {
                         text: "No rooms are available right now..."
                         font.pixelSize: 16
                         color: "gray"
-                        visible: listView.count <= 0 && !root.isInfoLoading
+                        visible: listView.count <= 0 && !root.rooms.loading
                         anchors.centerIn: parent
                     }
 
@@ -109,22 +104,35 @@ Item {
                         width: innerRect.width
                         height: parent.height
                         spacing: 5
-                        visible: count > 0 && !root.isInfoLoading
+                        model: root.rooms
+                        visible: count > 0 && !root.rooms.loading
 
                         signal roomClicked(string rid)
 
-                        delegate: Room {
+                        delegate: Column {
                             width: listView.width
-                            height: 60
-                            rid: model.rid
-                            setName: model.name
-                            setCreatedAt: model.createdAt
-                            maxCapacity: model.maxCapacity
-                            currentlyUsers: model.currentlyUsers
+                            spacing: 10
 
-                            MouseArea {
-                                anchors.fill: parent
-                                onClicked: listView.roomClicked(parent.rid)
+                            property bool isLast: index === ListView.view.count - 1
+
+                            Room {
+                                width: parent.width
+                                height: 60
+                                room: model
+
+                                MouseArea {
+                                    anchors.fill: parent
+                                    onClicked: listView.roomClicked(model.rid)
+                                }
+                            }
+
+                            RectButton {
+                                width: parent.isLast && root.rooms.canLoadMore ? parent.width / 4 : 0
+                                height: 30
+                                text: "Load more"
+                                visible: parent.isLast && root.rooms.canLoadMore
+                                anchors.horizontalCenter: parent.horizontalCenter
+                                onClicked: logic.findRooms(false)
                             }
                         }
                     }
@@ -135,7 +143,7 @@ Item {
                         height: parent.height
                         model: [1, 2, 3, 4, 5, 6, 7, 8]
                         spacing: 5
-                        visible: root.isInfoLoading
+                        visible: root.rooms.loading
 
                         delegate: RoomSkeleton {
                             width: listViewSkeleton.width
@@ -150,7 +158,8 @@ Item {
     Connections {
         target: listView
         function onRoomClicked(rid) {
-            root.roomClicked(rid)
+            console.log("ROOM CLICKED: ", rid)
+            logic.joinRoom(rid)
         }
     }
 }

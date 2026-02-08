@@ -34,16 +34,18 @@ public:
 public slots:
     void setUsername(const QString& username);
     void connectOnceMore();
-    void findRooms();
+    void findRooms(bool refresh = true);
     void undoTransition();
     void openRoomCreationPage();
     void createRoom(const QString& roomName, const int& maxCapacity);
     void joinRoom(const QString& rid);
     void leaveRoom();
+    void kickUser(const QString& uid);
 private slots:
     void onMessageReceived(const QString& message);
     bool onUserJoined(const QString &request, QJsonObject &root);
     bool onUserLeft(const QString& request, QJsonObject& root);
+    bool onKick(const QString& request, QJsonObject& root);
     bool onLeaderChanged(const QString& request, QJsonObject& root);
 signals:
     void connectionChanged();

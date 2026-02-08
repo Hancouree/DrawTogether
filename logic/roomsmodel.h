@@ -7,6 +7,7 @@ class RoomsModel : public QAbstractTableModel
 {
     Q_OBJECT
     Q_PROPERTY(bool loading READ loading NOTIFY loadingChanged FINAL)
+    Q_PROPERTY(bool canLoadMore READ canLoadMore NOTIFY canLoadMoreChanged FINAL)
 public:
     struct Room {
         QString rid;
@@ -25,12 +26,15 @@ public:
     QHash<int, QByteArray> roleNames() const override;
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
     bool loading() const { return _loading; }
+    bool canLoadMore() const { return _rooms.size() < total; }
 
     void pushRoom(const Room& room);
     void setLoading(const bool& loading);
+    void setTotal(const unsigned int& total);
     void clear();
 signals:
     void loadingChanged();
+    void canLoadMoreChanged();
 private:
     enum RoomsRoles {
         RidRole = Qt::UserRole + 1,
@@ -43,6 +47,7 @@ private:
 
     QVector<Room> _rooms;
     bool _loading;
+    unsigned int total;
 };
 
 #endif // ROOMSMODEL_H
