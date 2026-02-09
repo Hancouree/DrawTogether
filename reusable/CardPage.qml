@@ -19,6 +19,8 @@ Item {
             height: Math.min(parent.height, 480)
             radius: parent.width > 640 ? 5 : 0
             anchors.centerIn: parent
+            border.width: 1
+            border.color: "gray"
             color: "white"
 
             RectangularShadow {
@@ -28,14 +30,6 @@ Item {
                 blur: 25
                 color: "#40000000"
                 z: -1
-            }
-
-            Rectangle {
-                anchors.fill: parent
-                color: "transparent"
-                radius: parent.radius
-                border.width: 1
-                border.color: "gray"
             }
         }
     }

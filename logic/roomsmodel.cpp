@@ -14,7 +14,7 @@ int RoomsModel::count() const
 
 int RoomsModel::columnCount(const QModelIndex &parent) const
 {
-    return 5;
+    return 6;
 }
 
 QHash<int, QByteArray> RoomsModel::roleNames() const
@@ -25,6 +25,7 @@ QHash<int, QByteArray> RoomsModel::roleNames() const
     roleNames[CreatedAtRole] = "createdAt";
     roleNames[MaxCapacityRole] = "maxCapacity";
     roleNames[CurrentlyUsersRole] = "currentlyUsers";
+    roleNames[StartedRole] = "started";
 
     return roleNames;
 }
@@ -48,6 +49,8 @@ QVariant RoomsModel::data(const QModelIndex &index, int role) const
             return row.maxCapacity;
         case 4:
             return row.currentlyUsers;
+        case 5:
+            return row.started;
         default:
             return QVariant();
         }
@@ -67,6 +70,9 @@ QVariant RoomsModel::data(const QModelIndex &index, int role) const
 
     case CurrentlyUsersRole:
         return row.currentlyUsers;
+
+    case StartedRole:
+        return row.started;
 
     default:
         return QVariant();

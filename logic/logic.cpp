@@ -41,8 +41,7 @@ void Logic::setUsername(const QString &username)
 
 void Logic::findRooms(bool refresh)
 {
-    if (_roomsModel->count() > 0 && refresh)
-        _roomsModel->clear();
+    if (_roomsModel->count() > 0 && refresh) _roomsModel->clear();
 
     QJsonObject json;
     json["cmd"] = "find_rooms";
@@ -51,7 +50,7 @@ void Logic::findRooms(bool refresh)
 
     _requestManager->request(json, TIMEOUT)
         .then([this](const QJsonObject& answer) {
-            qDebug() << answer;
+            qDebug() << "FIND ROOMS: " << answer;
             _roomsModel->setTotal(answer["total"].toInt());
 
             const QJsonArray rooms = answer["rooms"].toArray();
@@ -60,8 +59,9 @@ void Logic::findRooms(bool refresh)
                 const QString& rid = room["rid"].toString(), timeAgo = toTimeAgo(room["created_at"].toInteger()),
                     name = room["name"].toString();
                 const int currentlyUsers = room["currently_users"].toInt(), maxCapacity = room["max_capacity"].toInt();
+                const bool started = room["started"].toBool();
 
-                _roomsModel->pushRoom(RoomsModel::Room({ rid, name, timeAgo, (unsigned int)maxCapacity, (unsigned int)currentlyUsers }));
+                _roomsModel->pushRoom(RoomsModel::Room({ rid, name, timeAgo, (unsigned int)maxCapacity, (unsigned int)currentlyUsers, started }));
             }
 
             _roomsModel->setLoading(false);
@@ -169,7 +169,45 @@ void Logic::kickUser(const QString &uid)
             }
         })
         .catchError([this](const QJsonObject& error) {
-             _notificationManager->error(error["error_message"].toString());
+            _notificationManager->error(error["error_message"].toString());
+        });
+}
+
+void Logic::startRoom()
+{
+    QJsonObject json;
+    json["cmd"] = "start_game";
+    json["rid"] = _roomInfo->rid();
+
+    _requestManager->request(json, TIMEOUT)
+        .then([this](const QJsonObject& answer) {
+            _state.applyEvent(FSM::ROOM_STARTED);
+        })
+        .catchError([this](const QJsonObject& error) {
+            _notificationManager->error(error["error_message"].toString());
+        });
+}
+
+void Logic::sendPoints(const QList<QPointF> &batchedPoints, const QColor& color)
+{
+    QJsonObject json;
+
+    QJsonArray points;
+    for (auto& p : batchedPoints) {
+        QJsonObject point;
+        point["x"] = p.x();
+        point["y"] = p.y();
+        points.append(point);
+    }
+
+    json["cmd"] = "sync_drawing";
+    json["rid"] = _roomInfo->rid();
+    json["points"] = points;
+    json["color"] = color.name();
+
+    _requestManager->request(json, TIMEOUT)
+        .catchError([this](const QJsonObject& error) {
+            _notificationManager->error(error["error_message"].toString());
         });
 }
 
@@ -186,9 +224,11 @@ void Logic::onMessageReceived(const QString &message)
     const QString& request = root["cmd"].toString();
 
     QVector<std::function<bool()>> handlers = {
+        [this, &request, &root]() { return onPointsReceived(request, root); },
         [this, &request, &root]() { return onUserJoined(request, root); },
         [this, &request, &root]() { return onUserLeft(request, root); },
         [this, &request, &root]() { return onKick(request, root); },
+        [this, &request, &root]() { return onStartRoom(request, root); },
         [this, &request, &root]() { return onLeaderChanged(request, root); }
     };
 
@@ -262,6 +302,41 @@ bool Logic::onLeaderChanged(const QString &request, QJsonObject &root)
     const QString rid = root["rid"].toString();
     if (_roomInfo->rid() == rid) {
         _roomInfo->setLeader(root["leaderUid"].toString());
+    }
+
+    return true;
+}
+
+bool Logic::onStartRoom(const QString &request, QJsonObject &root)
+{
+    if (request != "start_game")
+        return false;
+
+    const QString rid = root["rid"].toString();
+    if (_roomInfo->rid() == rid) {
+        _state.applyEvent(FSM::ROOM_STARTED);
+    }
+
+    return true;
+}
+
+bool Logic::onPointsReceived(const QString &request, QJsonObject &root)
+{
+    if (request != "sync_drawing")
+        return false;
+
+    qDebug() << "MESSAGE: " << root;
+
+    const QString rid = root["rid"].toString();
+
+    if (_roomInfo->rid() == rid) {
+        auto points = root["points"].toArray();
+
+        QList<QPointF> batchedPoints;
+
+        for (const QJsonValue& point : points) batchedPoints.append(QPointF{ point["x"].toDouble(), point["y"].toDouble() });
+
+        emit pointsBatched(batchedPoints, QColor(root["color"].toString()));
     }
 
     return true;

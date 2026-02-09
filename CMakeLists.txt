@@ -14,45 +14,43 @@ qt_add_executable(appDrawTogether
 
 qt_add_qml_module(appDrawTogether
     URI DrawTogether
+    VERSION 1.0
     QML_FILES
         Main.qml
+        components/LoginPage.qml
+        components/ConnectionPage.qml
+        components/MenuPage.qml
+        components/SearchRoomsPage.qml
+        components/RoomSkeleton.qml
+        components/Room.qml
+        components/RoomCreationPage.qml
+        components/Canvas.qml
+        components/Notification.qml
+        components/NotificationsContainer.qml
+        components/RoomPage.qml
+        reusable/RectButton.qml
+        reusable/Spinner.qml
+        reusable/CardPage.qml
+        reusable/CustomCombobox.qml
+        reusable/UserIcon.qml
     SOURCES
-        logic/logic.h
-        logic/logic.cpp
-        QML_FILES components/LoginPage.qml
-        SOURCES
-        QML_FILES components/ConnectionPage.qml
-        QML_FILES
-        QML_FILES reusable/RectButton.qml
-        QML_FILES reusable/Spinner.qml
-        QML_FILES components/MenuPage.qml
-        SOURCES logic/roomsmodel.h logic/roomsmodel.cpp
-        QML_FILES components/SearchRoomsPage.qml
-        QML_FILES components/RoomSkeleton.qml
-        SOURCES logic/fsm.h logic/fsm.cpp
-        SOURCES logic/requestmanager.h logic/requestmanager.cpp
-        SOURCES
-        QML_FILES components/Room.qml
-        RESOURCES icons/arrow.png icons/reload.png
-        QML_FILES components/RoomCreationPage.qml
-        QML_FILES
-        QML_FILES reusable/CardPage.qml
-        QML_FILES reusable/CustomCombobox.qml
-        QML_FILES reusable/UserIcon.qml
-        QML_FILES components/RoomPage.qml
-        SOURCES
-        SOURCES
-        SOURCES logic/participantsmodel.h logic/participantsmodel.cpp
-        SOURCES logic/roominfo.h logic/roominfo.cpp
-        RESOURCES
-        SOURCES
-        SOURCES logic/notificationmanager.h logic/notificationmanager.cpp
-        SOURCES logic/notification.h logic/notification.cpp
-        QML_FILES components/Notification.qml
-        QML_FILES components/NotificationsContainer.qml
-        RESOURCES icons/kick.png
-        RESOURCES
+        logic/logic.h logic/logic.cpp
+        logic/roomsmodel.h logic/roomsmodel.cpp
+        logic/fsm.h logic/fsm.cpp
+        logic/requestmanager.h logic/requestmanager.cpp
+        logic/participantsmodel.h logic/participantsmodel.cpp
+        logic/roominfo.h logic/roominfo.cpp
+        logic/notificationmanager.h logic/notificationmanager.cpp
+        logic/notification.h logic/notification.cpp
+        logic/drawingcanvas.h logic/drawingcanvas.cpp # Проверь, что файлы тут!
+    RESOURCES
+        icons/arrow.png
+        icons/reload.png
+        icons/kick.png
+        QML_FILES components/Toolbar.qml
 )
+
+target_include_directories(appDrawTogether PRIVATE logic)
 
 set_target_properties(appDrawTogether PROPERTIES
     MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}

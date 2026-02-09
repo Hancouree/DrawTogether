@@ -4,6 +4,8 @@
 #include <QJsonDocument>
 #include <QJsonArray>
 #include <QJsonObject> //mayber incapsulate it later to functions
+#include <QPointF>
+#include <QColor>
 #include "fsm.h"
 #include "requestmanager.h"
 #include "roomsmodel.h"
@@ -41,17 +43,22 @@ public slots:
     void joinRoom(const QString& rid);
     void leaveRoom();
     void kickUser(const QString& uid);
+    void startRoom();
+    void sendPoints(const QList<QPointF>& batchedPoints, const QColor& color);
 private slots:
     void onMessageReceived(const QString& message);
     bool onUserJoined(const QString &request, QJsonObject &root);
     bool onUserLeft(const QString& request, QJsonObject& root);
     bool onKick(const QString& request, QJsonObject& root);
     bool onLeaderChanged(const QString& request, QJsonObject& root);
+    bool onStartRoom(const QString& request, QJsonObject& root);
+    bool onPointsReceived(const QString& request, QJsonObject& root);
 signals:
     void connectionChanged();
     void connectionFailed();
     void usernameChanged();
     void stateChanged();
+    void pointsBatched(const QList<QPointF>& points, const QColor& color);
 private:
     void parseUsers(const QJsonArray& users);
 

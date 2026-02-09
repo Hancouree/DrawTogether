@@ -35,8 +35,7 @@ Item {
                         onClicked: logic.undoTransition()
 
                         Image {
-                            width: 30
-                            height: 30
+                            anchors.fill: parent
                             source: "../icons/arrow.png"
                             scale: parent.hovered ? 1.1 : 1
                             anchors.centerIn: parent
@@ -122,7 +121,9 @@ Item {
 
                                 MouseArea {
                                     anchors.fill: parent
-                                    onClicked: listView.roomClicked(model.rid)
+                                    onClicked: {
+                                        if (!parent.started) listView.roomClicked(model.rid)
+                                    }
                                 }
                             }
 
@@ -158,7 +159,6 @@ Item {
     Connections {
         target: listView
         function onRoomClicked(rid) {
-            console.log("ROOM CLICKED: ", rid)
             logic.joinRoom(rid)
         }
     }

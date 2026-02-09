@@ -10,7 +10,7 @@
 // #include <QDateTime>
 
 #define TIMEOUT 5000
-#define MAX_CONNECTION_ATTEMPTS 2
+#define MAX_CONNECTION_ATTEMPTS 5
 
 class Request;
 

@@ -15,6 +15,7 @@ public:
         QString createdAt;
         unsigned int maxCapacity;
         unsigned currentlyUsers;
+        bool started;
     };
 
     RoomsModel(QObject* parent = nullptr);
@@ -41,7 +42,8 @@ private:
         NameRole,
         CreatedAtRole,
         MaxCapacityRole,
-        CurrentlyUsersRole
+        CurrentlyUsersRole,
+        StartedRole
     };
     Q_ENUM(RoomsRoles)
 

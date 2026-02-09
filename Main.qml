@@ -65,7 +65,7 @@ Window {
                 if (stackView.depth > 1) {
                     stackView.pop()
                 } else {
-                    stackView.replace("components/LoginPage.qml")
+                    stackView.replace("components/LoginPage.qml"/*"components/Canvas.qml"*/)
                 }
             }
         }
@@ -77,7 +77,6 @@ Window {
         }
 
         function onStateChanged() {
-            console.log("Current state: ", logic.state)
             switch(logic.state) {
             case FSM.LOGIN:
                 stackView.replace("components/LoginPage.qml")
@@ -99,6 +98,9 @@ Window {
                 stackView.replace("components/RoomPage.qml", {
                     "roomInfo": logic.roomInfo
                 })
+                break
+            case FSM.IN_GAME:
+                stackView.replace("components/Canvas.qml")
                 break;
             }
         }

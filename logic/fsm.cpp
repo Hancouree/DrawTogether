@@ -23,7 +23,11 @@ FSM::FSM(QObject* parent) : QObject(parent),  _state(LOGIN) {
         },
         {IN_ROOM, {
                     {LEFT_ROOM, MENU},
-                    {KICKED, MENU}
+                    {KICKED, MENU},
+                    {ROOM_STARTED, IN_GAME}
+        }},
+        {IN_GAME, {
+                   {LEFT_ROOM, MENU}
         }}
     };
 }

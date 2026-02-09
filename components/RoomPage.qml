@@ -157,7 +157,7 @@ Item {
                         scale: hovered ? 1.1 : 1
                         visible: root.roomInfo.isMeLeader
                         clip: true
-                        // onClicked:
+                        onClicked: logic.startRoom()
 
                         Behavior on scale {
                             NumberAnimation { duration: 200 }
