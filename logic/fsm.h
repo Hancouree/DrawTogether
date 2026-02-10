@@ -26,7 +26,8 @@ public:
         JOINED_ROOM,
         LEFT_ROOM,
         KICKED,
-        ROOM_STARTED
+        ROOM_STARTED,
+        GAME_ENDED
     };
     Q_ENUM(Events);
 

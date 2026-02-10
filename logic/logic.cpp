@@ -211,6 +211,21 @@ void Logic::sendPoints(const QList<QPointF> &batchedPoints, const QColor& color)
         });
 }
 
+void Logic::finishGame()
+{
+    QJsonObject json;
+    json["cmd"] = "finish_game";
+    json["rid"] = _roomInfo->rid();
+
+    _requestManager->request(json, TIMEOUT)
+        .then([this](const QJsonObject& answer) {
+            _state.applyEvent(FSM::GAME_ENDED);
+        })
+        .catchError([this](const QJsonObject& error) {
+            _notificationManager->error(error["error_message"].toString());
+        });
+}
+
 void Logic::onMessageReceived(const QString &message)
 {
     QJsonDocument doc = QJsonDocument::fromJson(message.toUtf8());
@@ -229,6 +244,7 @@ void Logic::onMessageReceived(const QString &message)
         [this, &request, &root]() { return onUserLeft(request, root); },
         [this, &request, &root]() { return onKick(request, root); },
         [this, &request, &root]() { return onStartRoom(request, root); },
+        [this, &request, &root]() { return onFinishGame(request, root); },
         [this, &request, &root]() { return onLeaderChanged(request, root); }
     };
 
@@ -325,8 +341,6 @@ bool Logic::onPointsReceived(const QString &request, QJsonObject &root)
     if (request != "sync_drawing")
         return false;
 
-    qDebug() << "MESSAGE: " << root;
-
     const QString rid = root["rid"].toString();
 
     if (_roomInfo->rid() == rid) {
@@ -337,6 +351,19 @@ bool Logic::onPointsReceived(const QString &request, QJsonObject &root)
         for (const QJsonValue& point : points) batchedPoints.append(QPointF{ point["x"].toDouble(), point["y"].toDouble() });
 
         emit pointsBatched(batchedPoints, QColor(root["color"].toString()));
+    }
+
+    return true;
+}
+
+bool Logic::onFinishGame(const QString &request, QJsonObject &root)
+{
+    if (request != "finish_game")
+        return false;
+
+    const QString rid = root["rid"].toString();
+    if (_roomInfo->rid() == rid) {
+        _state.applyEvent(FSM::GAME_ENDED);
     }
 
     return true;

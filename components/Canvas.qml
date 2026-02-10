@@ -135,6 +135,29 @@ Item {
         }
     }
 
+    RectButton {
+        width: 30
+        height: 30
+        color: "transparent"
+        borderWidth: 0
+        anchors { top: parent.top; right: parent.right; margins: 10 }
+        onClicked: logic.finishGame()
+
+        Image {
+            anchors.fill: parent
+            source: "../icons/finish.png"
+            scale: parent.hovered ? 1.1 : 1
+            anchors.centerIn: parent
+
+            Behavior on scale {
+                NumberAnimation {
+                    duration: 400
+                    easing.type: Easing.OutBack
+                }
+            }
+        }
+    }
+
     ConfirmationPopup {
         id: confirmationPopup
         width: Math.min(parent.width / 2, 340)

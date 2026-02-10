@@ -45,6 +45,7 @@ public slots:
     void kickUser(const QString& uid);
     void startRoom();
     void sendPoints(const QList<QPointF>& batchedPoints, const QColor& color);
+    void finishGame();
 private slots:
     void onMessageReceived(const QString& message);
     bool onUserJoined(const QString &request, QJsonObject &root);
@@ -53,6 +54,7 @@ private slots:
     bool onLeaderChanged(const QString& request, QJsonObject& root);
     bool onStartRoom(const QString& request, QJsonObject& root);
     bool onPointsReceived(const QString& request, QJsonObject& root);
+    bool onFinishGame(const QString& request, QJsonObject& root);
 signals:
     void connectionChanged();
     void connectionFailed();

@@ -14,7 +14,19 @@ Window {
     StackView {
         id: stackView
         anchors.fill: parent
-        initialItem: connectionPage
+
+        function isCurrentItem(pageUrl) {
+            if (!currentItem) return false;
+
+            var currentUrl = String(stackView.currentItem).split("(")[0];
+            return currentUrl.includes(pageUrl);
+        }
+
+        Component.onCompleted: {
+            stackView.push("components/ConnectionPage.qml", {
+                objectName: "ConnectionPage"
+            })
+        }
 
         replaceEnter: Transition {
             PropertyAnimation {
@@ -49,23 +61,21 @@ Window {
         notificationManager: logic.notificationManager
     }
 
-    ConnectionPage {
-        id: connectionPage
-        visible: true
-    }
-
     Connections {
         target: logic
         function onConnectionChanged() {
+            console.log(stackView.currentItem, root.connected)
             if (!root.connected) {
-                if (stackView.currentItem !== connectionPage) {
-                    stackView.push(connectionPage)
+                if (stackView.currentItem.objectName !== "ConnectionPage") {
+                    stackView.push("components/ConnectionPage.qml", {
+                       objectName: "ConnectionPage"
+                    })
                 }
             } else {
                 if (stackView.depth > 1) {
                     stackView.pop()
                 } else {
-                    stackView.replace("components/LoginPage.qml"/*"components/Canvas.qml"*/)
+                    stackView.replace("components/LoginPage.qml")
                 }
             }
         }

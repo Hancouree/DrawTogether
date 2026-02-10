@@ -52,9 +52,7 @@ RequestManager::RequestManager(const QUrl& url, QObject *parent)
 {
     _socket->setParent(this);
 
-    connect(_socket, &QWebSocket::stateChanged, this, [this]() {
-        emit connectionChanged();
-    });
+    connect(_socket, &QWebSocket::stateChanged, this, [this](){ emit connectionChanged(); });
 
     connect(_socket, &QWebSocket::sslErrors, this, [this](const QList<QSslError> &errors) {
         for (const auto &error : errors) {
@@ -81,11 +79,11 @@ RequestManager::RequestManager(const QUrl& url, QObject *parent)
     connect(&connectionTimer, &QTimer::timeout, this, [this, url]() {
         if (connectionAttempts >= MAX_CONNECTION_ATTEMPTS) {
             emit connectionFailed();
-            qWarning() << "Maximum connection attempts reached:" << MAX_CONNECTION_ATTEMPTS << "\n";
+            qWarning() << "Maximum connection attempts reached:" << MAX_CONNECTION_ATTEMPTS;
         } else {
             _socket->open(url);
             connectionAttempts++;
-            qDebug() << "Connection attempt:" << connectionAttempts << "\n";
+            qDebug() << "Connection attempt:" << connectionAttempts;
         }
     });
 
