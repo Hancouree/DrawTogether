@@ -48,6 +48,8 @@ qt_add_qml_module(appDrawTogether
         icons/reload.png
         icons/kick.png
         QML_FILES components/Toolbar.qml
+        QML_FILES
+        QML_FILES reusable/ConfirmationPopup.qml
 )
 
 target_include_directories(appDrawTogether PRIVATE logic)

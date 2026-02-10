@@ -136,7 +136,7 @@ Item {
                         borderWidth: 0
                         radius: 5
                         scale: hovered ? 1.1 : 1
-                        onClicked: logic.leaveRoom()
+                        onClicked: /*logic.leaveRoom()*/confirmationPopup.opacity = 1
 
                         Behavior on scale {
                             NumberAnimation { duration: 200 }
@@ -165,6 +165,16 @@ Item {
                     }
                 }
             }
+        }
+
+        ConfirmationPopup {
+            id: confirmationPopup
+            width: Math.min(parent.width / 2, 340)
+            height: 85
+            opacity: 0
+            anchors.centerIn: parent
+            onStayClicked: opacity = 0
+            onContinueClicked: logic.leaveRoom()
         }
     }
 }
