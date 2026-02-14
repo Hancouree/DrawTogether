@@ -33,6 +33,8 @@ qt_add_qml_module(appDrawTogether
         reusable/CardPage.qml
         reusable/CustomCombobox.qml
         reusable/UserIcon.qml
+        reusable/ConfirmationPopup.qml
+        reusable/Toolbar.qml
     SOURCES
         logic/logic.h logic/logic.cpp
         logic/roomsmodel.h logic/roomsmodel.cpp
@@ -47,10 +49,10 @@ qt_add_qml_module(appDrawTogether
         icons/arrow.png
         icons/reload.png
         icons/kick.png
-        QML_FILES components/Toolbar.qml
-        QML_FILES
-        QML_FILES reusable/ConfirmationPopup.qml
-        RESOURCES icons/finish.png
+        icons/finish.png
+        RESOURCES icons/diagonal-line.png icons/eraser.png
+        RESOURCES icons/paint-brush.png
+        QML_FILES reusable/Toolbutton.qml
 )
 
 target_include_directories(appDrawTogether PRIVATE logic)

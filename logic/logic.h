@@ -44,7 +44,7 @@ public slots:
     void leaveRoom();
     void kickUser(const QString& uid);
     void startRoom();
-    void sendPoints(const QList<QPointF>& batchedPoints, const QColor& color);
+    void sendPoints(const QList<QPointF>& batchedPoints, const QColor& color, const int& penWidth);
     void finishGame();
 private slots:
     void onMessageReceived(const QString& message);
@@ -60,7 +60,7 @@ signals:
     void connectionFailed();
     void usernameChanged();
     void stateChanged();
-    void pointsBatched(const QList<QPointF>& points, const QColor& color);
+    void pointsBatched(const QList<QPointF>& points, const QColor& color, const int& width);
 private:
     void parseUsers(const QJsonArray& users);
 

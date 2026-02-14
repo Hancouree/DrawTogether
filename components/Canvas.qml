@@ -43,16 +43,52 @@ Item {
         DrawingCanvas {
             id: drawingCanvas
             anchors.fill: parent
-            penColor: "black"
+
+            readonly property var toolStates: ({
+                [DrawingCanvas.Brush]: {
+                    color: "black",
+                    width: 3
+                },
+                [DrawingCanvas.Eraser]: {
+                    color: Qt.darker("white", 1.05),
+                    width: 15
+                },
+                [DrawingCanvas.Line]: {
+                    color: "black",
+                    width: 3
+                }
+            })
+
+            onToolChanged: applyToolSettings()
+
+            function applyToolSettings() {
+                const setting = toolStates[tool]
+                if (setting) {
+                    penColor = setting.color
+                    penWidth = setting.width
+                }
+            }
+
+            onPenColorChanged: {
+                if (tool !== DrawingCanvas.Eraser) {
+                    toolStates[tool].color = penColor
+                }
+            }
+
+            onPenWidthChanged: {
+                if (tool !== DrawingCanvas.Eraser) {
+                    toolStates[tool].width = penWidth
+                }
+            }
 
             onPointsBatched: function(batched) {
-                logic.sendPoints(batched, drawingCanvas.penColor)
+                logic.sendPoints(batched, drawingCanvas.penColor, drawingCanvas.penWidth)
             }
 
             Connections {
                 target: logic
-                function onPointsBatched(points, color) {
-                    drawingCanvas.drawRemoteBatch(points, color)
+                function onPointsBatched(points, penColor, penWidth) {
+                    drawingCanvas.drawRemoteBatch(points, penColor, penWidth)
                 }
             }
         }
@@ -60,13 +96,22 @@ Item {
 
     // Keys.onPressed: function(event) {
     //     if (event.key === Qt.Key_Space) {
-    //         // console.log(mainMouseArea)
+    //         var canvasPoint = mapToItem(cameraNode, mainMouseArea.mouseX, mainMouseArea.mouseY)
+    //         drawingCanvas.startDrawing(canvasPoint.x, canvasPoint.y)
+    //     }
+    // }
+
+    // Keys.onReleased: function(event) {
+    //     if (event.key === Qt.Key_Space) {
+    //         var canvasPoint = mapToItem(cameraNode, mainMouseArea.mouseX, mainMouseArea.mouseY)
+    //         drawingCanvas.addPoint(canvasPoint.x, canvasPoint.y)
     //     }
     // }
 
     MouseArea {
         id: mainMouseArea
         anchors.fill: parent
+        hoverEnabled: true
         acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
 
         property point lastPanPos
@@ -85,13 +130,34 @@ Item {
             var canvasPoint = mapToItem(cameraNode, mouse.x, mouse.y)
 
             if (mouse.buttons & Qt.LeftButton) {
-                drawingCanvas.addPoint(canvasPoint.x, canvasPoint.y)
+                switch(drawingCanvas.tool) {
+                    case DrawingCanvas.Brush:
+                        drawingCanvas.addPoint(canvasPoint.x, canvasPoint.y)
+                    break;
+                    case DrawingCanvas.Eraser:
+                        drawingCanvas.addPoint(canvasPoint.x, canvasPoint.y)
+                    break;
+                   case DrawingCanvas.Line: break;
+                }
             } else if (mouse.buttons & (Qt.RightButton | Qt.MiddleButton)) {
                 var dx = mouse.x - lastPanPos.x
                 var dy = mouse.y - lastPanPos.y
                 canvasTranslate.x += dx
                 canvasTranslate.y += dy
                 lastPanPos = Qt.point(mouse.x, mouse.y)
+            }
+        }
+
+        onReleased: function(mouse) {
+            var canvasPoint = mapToItem(cameraNode, mouse.x, mouse.y)
+
+            if (mouse.button === Qt.LeftButton) {
+                switch(drawingCanvas.tool) {
+                case DrawingCanvas.Line:
+                    drawingCanvas.addPoint(canvasPoint.x, canvasPoint.y)
+                default:
+                    drawingCanvas.finishDrawing()
+                }
             }
         }
 
@@ -118,7 +184,7 @@ Item {
         color: "transparent"
         borderWidth: 0
         anchors { top: parent.top; left: parent.left; margins: 10 }
-        onClicked: /*logic.leaveRoom()*/confirmationPopup.opacity = 1
+        onClicked: confirmationPopup.opacity = 1
 
         Image {
             anchors.fill: parent
@@ -166,5 +232,20 @@ Item {
         anchors.centerIn: parent
         onStayClicked: opacity = 0
         onContinueClicked: logic.leaveRoom()
+    }
+
+    Toolbar {
+        id: toolbar
+        width: Math.min(parent.width / 2, 340)
+        selected: drawingCanvas.tool
+        anchors { bottom: parent.bottom; bottomMargin: 10; horizontalCenter: parent.horizontalCenter }
+
+        onToolSelected: function(toolId) {
+            switch(toolId) {
+            case "brush":  drawingCanvas.tool = DrawingCanvas.Brush; break;
+            case "eraser": drawingCanvas.tool = DrawingCanvas.Eraser; break;
+            case "line":   drawingCanvas.tool = DrawingCanvas.Line; break;
+            }
+        }
     }
 }

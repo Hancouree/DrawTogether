@@ -108,6 +108,10 @@ Item {
 
                         signal roomClicked(string rid)
 
+                        onRoomClicked: function(rid) {
+                            logic.joinRoom(rid)
+                        }
+
                         delegate: Column {
                             width: listView.width
                             spacing: 10
@@ -153,13 +157,6 @@ Item {
                     }
                 }
             }
-        }
-    }
-
-    Connections {
-        target: listView
-        function onRoomClicked(rid) {
-            logic.joinRoom(rid)
         }
     }
 }

@@ -144,10 +144,8 @@ void Logic::leaveRoom()
     _requestManager->request(json, TIMEOUT)
         .then([this](const QJsonObject& answer) {
             qDebug() << answer << "\n";
-            if (answer["ok"].toBool()) {
-                _roomInfo->clearParticipants();
-                _state.applyEvent(FSM::LEFT_ROOM);
-            }
+            _roomInfo->clearParticipants();
+            _state.applyEvent(FSM::LEFT_ROOM);
         })
         .catchError([this](const QJsonObject error) {
             _notificationManager->error(error["error_message"].toString());
@@ -163,10 +161,8 @@ void Logic::kickUser(const QString &uid)
 
     _requestManager->request(json, TIMEOUT)
         .then([this, uid](const QJsonObject& answer) {
-            if (answer["ok"].toBool()) {
-                _roomInfo->removeParticipant(uid);
-                 _notificationManager->notification("You've kicked the user");
-            }
+            _roomInfo->removeParticipant(uid);
+            _notificationManager->notification("You've kicked the user");
         })
         .catchError([this](const QJsonObject& error) {
             _notificationManager->error(error["error_message"].toString());
@@ -188,7 +184,7 @@ void Logic::startRoom()
         });
 }
 
-void Logic::sendPoints(const QList<QPointF> &batchedPoints, const QColor& color)
+void Logic::sendPoints(const QList<QPointF> &batchedPoints, const QColor& color, const int& penWidth)
 {
     QJsonObject json;
 
@@ -203,6 +199,7 @@ void Logic::sendPoints(const QList<QPointF> &batchedPoints, const QColor& color)
     json["cmd"] = "sync_drawing";
     json["rid"] = _roomInfo->rid();
     json["points"] = points;
+    json["penWidth"] = penWidth;
     json["color"] = color.name();
 
     _requestManager->request(json, TIMEOUT)
@@ -344,13 +341,17 @@ bool Logic::onPointsReceived(const QString &request, QJsonObject &root)
     const QString rid = root["rid"].toString();
 
     if (_roomInfo->rid() == rid) {
-        auto points = root["points"].toArray();
+        const auto& points = root["points"].toArray();
 
         QList<QPointF> batchedPoints;
 
         for (const QJsonValue& point : points) batchedPoints.append(QPointF{ point["x"].toDouble(), point["y"].toDouble() });
 
-        emit pointsBatched(batchedPoints, QColor(root["color"].toString()));
+        emit pointsBatched(
+            batchedPoints,
+            QColor(root["color"].toString()),
+            root["penWidth"].toInt()
+        );
     }
 
     return true;

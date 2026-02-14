@@ -29,7 +29,7 @@ void DrawingCanvas::addPoint(qreal x, qreal y)
     if (canvasImage.isNull()) return;
 
     QPointF currentPoint(x, y);
-    localDraw(lastPoint, currentPoint, m_color);
+    localDraw(lastPoint, currentPoint, m_width, m_color);
     lastPoint = currentPoint;
 
     pointBuffer.append(normalize(currentPoint));
@@ -49,19 +49,19 @@ void DrawingCanvas::finishDrawing()
     pointBuffer.clear();
 }
 
-void DrawingCanvas::drawRemoteBatch(const QList<QPointF> &points, QColor color)
+void DrawingCanvas::drawRemoteBatch(const QList<QPointF> &points, const QColor& color, const int& penWidth)
 {
     if (points.size() < 2) return;
     for (int i = 1; i < points.size(); ++i) {
-        localDraw(denormalize(points[i-1]), denormalize(points[i]), color);
+        localDraw(denormalize(points[i-1]), denormalize(points[i]), penWidth, color);
     }
 }
 
-void DrawingCanvas::localDraw(const QPointF &p1, const QPointF &p2, const QColor &color)
+void DrawingCanvas::localDraw(const QPointF &p1, const QPointF &p2, const int& width, const QColor &color)
 {
     QPainter imgPainter(&canvasImage);
     imgPainter.setRenderHint(QPainter::Antialiasing);
-    QPen pen(color, 3, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
+    QPen pen(color, width, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
     imgPainter.setPen(pen);
     imgPainter.drawLine(p1, p2);
 

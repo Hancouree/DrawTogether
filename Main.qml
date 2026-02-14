@@ -15,13 +15,6 @@ Window {
         id: stackView
         anchors.fill: parent
 
-        function isCurrentItem(pageUrl) {
-            if (!currentItem) return false;
-
-            var currentUrl = String(stackView.currentItem).split("(")[0];
-            return currentUrl.includes(pageUrl);
-        }
-
         Component.onCompleted: {
             stackView.push("components/ConnectionPage.qml", {
                 objectName: "ConnectionPage"
@@ -64,7 +57,6 @@ Window {
     Connections {
         target: logic
         function onConnectionChanged() {
-            console.log(stackView.currentItem, root.connected)
             if (!root.connected) {
                 if (stackView.currentItem.objectName !== "ConnectionPage") {
                     stackView.push("components/ConnectionPage.qml", {
