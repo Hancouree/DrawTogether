@@ -12,9 +12,9 @@
 class DrawingCanvas : public QQuickPaintedItem {
     Q_OBJECT
     QML_ELEMENT
-    Q_PROPERTY(QColor penColor MEMBER m_color NOTIFY colorChanged)
-    Q_PROPERTY(int penWidth MEMBER m_width NOTIFY widthChanged)
-    Q_PROPERTY(Tool tool MEMBER m_tool NOTIFY toolChanged)
+    Q_PROPERTY(QColor penColor MEMBER _color NOTIFY colorChanged)
+    Q_PROPERTY(int penWidth MEMBER _width NOTIFY widthChanged)
+    Q_PROPERTY(Tool tool MEMBER _tool NOTIFY toolChanged)
 public:
     enum Tool {
         Brush,
@@ -44,9 +44,10 @@ private:
     QImage canvasImage;
     QPointF lastPoint;
     QList<QPointF> pointBuffer;
-    QColor m_color = Qt::black;
-    int m_width = 3;
-    Tool m_tool = Tool::Brush;
+
+    QColor _color = Qt::black;
+    int _width = 3;
+    Tool _tool = Tool::Brush;
 };
 
 #endif // DRAWINGCANVAS_H

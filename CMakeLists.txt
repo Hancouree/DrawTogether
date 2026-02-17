@@ -35,6 +35,7 @@ qt_add_qml_module(appDrawTogether
         reusable/UserIcon.qml
         reusable/ConfirmationPopup.qml
         reusable/Toolbar.qml
+        reusable/Toolbutton.qml
     SOURCES
         logic/logic.h logic/logic.cpp
         logic/roomsmodel.h logic/roomsmodel.cpp
@@ -50,9 +51,9 @@ qt_add_qml_module(appDrawTogether
         icons/reload.png
         icons/kick.png
         icons/finish.png
-        RESOURCES icons/diagonal-line.png icons/eraser.png
-        RESOURCES icons/paint-brush.png
-        QML_FILES reusable/Toolbutton.qml
+        icons/diagonal-line.png icons/eraser.png
+        icons/paint-brush.png
+        RESOURCES
 )
 
 target_include_directories(appDrawTogether PRIVATE logic)

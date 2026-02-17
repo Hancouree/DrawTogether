@@ -16,7 +16,7 @@ QString toTimeAgo(qint64 timestamp) {
 
 Logic::Logic(QObject *parent)
     : QObject(parent),
-    _requestManager(new RequestManager(QUrl(("wss://26.209.218.198:5050")), this)),
+    _requestManager(new RequestManager(QUrl(("wss://127.0.0.1:5050")), this)), //to not make you overthink, later will add .env
     _roomsModel(new RoomsModel(this)),
     _roomInfo(new RoomInfo(this)),
     _notificationManager(new NotificationManager(this))

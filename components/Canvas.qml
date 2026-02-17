@@ -42,24 +42,23 @@ Item {
 
         DrawingCanvas {
             id: drawingCanvas
+
+            property int currentColor: 0
+            penColor: colors[currentColor]
             anchors.fill: parent
 
-            readonly property var toolStates: ({
-                [DrawingCanvas.Brush]: {
-                    color: "black",
-                    width: 3
-                },
-                [DrawingCanvas.Eraser]: {
-                    color: Qt.darker("white", 1.05),
-                    width: 15
-                },
-                [DrawingCanvas.Line]: {
-                    color: "black",
-                    width: 3
-                }
-            })
+            function syncToolState(key, value) {
+                for (var t in toolStates)
+                    if (parseInt(t) !== DrawingCanvas.Eraser) {
+                        toolStates[t][key] = value
+                    }
+            }
 
-            onToolChanged: applyToolSettings()
+            property var toolStates: ({
+                [DrawingCanvas.Brush]: { color: "black", width: 3 },
+                [DrawingCanvas.Eraser]: { color: Qt.darker("white", 1.05), width: 15 },
+                [DrawingCanvas.Line]: { color: "black", width: 3 }
+            })
 
             function applyToolSettings() {
                 const setting = toolStates[tool]
@@ -69,27 +68,28 @@ Item {
                 }
             }
 
-            onPenColorChanged: {
-                if (tool !== DrawingCanvas.Eraser) {
-                    toolStates[tool].color = penColor
+            property var colors: [
+                "#000000",
+                "#EF4444",
+                "#3B82F6",
+                "#10B981",
+                "#F59E0B",
+                "#8B5CF6"
+            ]
+
+            onToolChanged: applyToolSettings()
+            onCurrentColorChanged: {
+                penColor = colors[currentColor]
+                if (tool != DrawingCanvas.Eraser) {
+                    syncToolState("color", penColor)
                 }
             }
-
-            onPenWidthChanged: {
-                if (tool !== DrawingCanvas.Eraser) {
-                    toolStates[tool].width = penWidth
-                }
-            }
-
-            onPointsBatched: function(batched) {
-                logic.sendPoints(batched, drawingCanvas.penColor, drawingCanvas.penWidth)
-            }
+            onPenWidthChanged: { if (tool !== DrawingCanvas.Eraser) syncToolState("width", penWidth) }
+            onPointsBatched: function(batched) { logic.sendPoints(batched, drawingCanvas.penColor, drawingCanvas.penWidth) }
 
             Connections {
                 target: logic
-                function onPointsBatched(points, penColor, penWidth) {
-                    drawingCanvas.drawRemoteBatch(points, penColor, penWidth)
-                }
+                function onPointsBatched(points, penColor, penWidth) { drawingCanvas.drawRemoteBatch(points, penColor, penWidth) }
             }
         }
     }
@@ -237,15 +237,11 @@ Item {
     Toolbar {
         id: toolbar
         width: Math.min(parent.width / 2, 340)
-        selected: drawingCanvas.tool
+        toolSelected: drawingCanvas.tool
+        colors: drawingCanvas.colors
+        colorSelected: drawingCanvas.currentColor
         anchors { bottom: parent.bottom; bottomMargin: 10; horizontalCenter: parent.horizontalCenter }
-
-        onToolSelected: function(toolId) {
-            switch(toolId) {
-            case "brush":  drawingCanvas.tool = DrawingCanvas.Brush; break;
-            case "eraser": drawingCanvas.tool = DrawingCanvas.Eraser; break;
-            case "line":   drawingCanvas.tool = DrawingCanvas.Line; break;
-            }
-        }
+        onToolChanged: function(toolId) { drawingCanvas.tool = toolId }
+        onColorChanged: function(colorId) { drawingCanvas.currentColor = colorId }
     }
 }

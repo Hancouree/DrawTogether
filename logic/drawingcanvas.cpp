@@ -29,7 +29,7 @@ void DrawingCanvas::addPoint(qreal x, qreal y)
     if (canvasImage.isNull()) return;
 
     QPointF currentPoint(x, y);
-    localDraw(lastPoint, currentPoint, m_width, m_color);
+    localDraw(lastPoint, currentPoint, _width, _color);
     lastPoint = currentPoint;
 
     pointBuffer.append(normalize(currentPoint));
