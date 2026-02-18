@@ -14,9 +14,9 @@ QString toTimeAgo(qint64 timestamp) {
     return QString("%1 y. %2").arg(secs/31536000).arg(suffix);
 }
 
-Logic::Logic(QObject *parent)
+Logic::Logic(QUrl url, QObject *parent)
     : QObject(parent),
-    _requestManager(new RequestManager(QUrl(("wss://127.0.0.1:5050")), this)), //to not make you overthink, later will add .env
+    _requestManager(new RequestManager(url, this)), //to not make you overthink, later will add .env
     _roomsModel(new RoomsModel(this)),
     _roomInfo(new RoomInfo(this)),
     _notificationManager(new NotificationManager(this))
@@ -98,7 +98,7 @@ void Logic::createRoom(const QString& roomName, const int& maxCapacity)
 
             _roomInfo->setRid(answer["rid"].toString());
             _roomInfo->setName(answer["name"].toString());
-            _roomInfo->setMaxCapacity(answer["maxCapacity"].toInt());
+            _roomInfo->setMaxCapacity(answer["max_capacity"].toInt());
             _roomInfo->setMyUid(myUid);
             _roomInfo->setLeaderUid(myUid);
 
@@ -122,7 +122,7 @@ void Logic::joinRoom(const QString &rid)
         .then([this](const QJsonObject& answer) {
             _roomInfo->setRid(answer["rid"].toString());
             _roomInfo->setName(answer["name"].toString());
-            _roomInfo->setMaxCapacity(answer["maxCapacity"].toInt());
+            _roomInfo->setMaxCapacity(answer["max_capacity"].toInt());
             _roomInfo->setMyUid(answer["uid"].toString());
             _roomInfo->setLeaderUid(answer["leaderUid"].toString());
 

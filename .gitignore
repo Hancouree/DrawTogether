@@ -39,3 +39,5 @@ ui_*.h
 *.log
 .DS_Store
 Thumbs.db
+
+.env

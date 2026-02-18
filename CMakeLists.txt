@@ -54,6 +54,7 @@ qt_add_qml_module(appDrawTogether
         icons/diagonal-line.png icons/eraser.png
         icons/paint-brush.png
         RESOURCES
+        RESOURCES .env
 )
 
 target_include_directories(appDrawTogether PRIVATE logic)

@@ -24,7 +24,7 @@ class Logic : public QObject
     Q_PROPERTY(RoomInfo* roomInfo READ roomInfo CONSTANT)
     Q_PROPERTY(NotificationManager* notificationManager READ notificationManager CONSTANT)
 public:
-    Logic(QObject* parent = nullptr);
+    Logic(QUrl url, QObject* parent = nullptr);
     ~Logic();
 
     bool connected() const { return _requestManager->connected(); }
