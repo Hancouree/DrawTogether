@@ -3,7 +3,6 @@
 
 #include <QJsonDocument>
 #include <QJsonArray>
-#include <QJsonObject> //mayber incapsulate it later to functions
 #include <QPointF>
 #include <QColor>
 #include "fsm.h"
@@ -53,8 +52,8 @@ private slots:
     bool onKick(const QString& request, QJsonObject& root);
     bool onLeaderChanged(const QString& request, QJsonObject& root);
     bool onStartRoom(const QString& request, QJsonObject& root);
-    bool onPointsReceived(const QString& request, QJsonObject& root);
     bool onFinishGame(const QString& request, QJsonObject& root);
+    void onBinaryMessageReceived(const QByteArray& message);
 signals:
     void connectionChanged();
     void connectionFailed();

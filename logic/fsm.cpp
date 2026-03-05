@@ -33,12 +33,18 @@ FSM::FSM(QObject* parent) : QObject(parent),  _state(LOGIN) {
     };
 }
 
-void FSM::applyEvent(const Events &event)
+void FSM::applyEvent(Events event)
 {
     if (transition[_state].contains(event)) {
         _state = transition[_state][event];
         emit stateChanged();
     }
+}
+
+
+void FSM::setState(States state)
+{
+    _state = state;
 }
 
 FSM::~FSM() {}

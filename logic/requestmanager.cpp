@@ -51,9 +51,7 @@ RequestManager::RequestManager(const QUrl& url, QObject *parent)
     _socket(new QWebSocket())
 {
     _socket->setParent(this);
-
     connect(_socket, &QWebSocket::stateChanged, this, [this](){ emit connectionChanged(); });
-
     connect(_socket, &QWebSocket::sslErrors, this, [this](const QList<QSslError> &errors) {
         for (const auto &error : errors) {
             qDebug() << "SSL Error:" << error.errorString() << "\n";
@@ -69,6 +67,7 @@ RequestManager::RequestManager(const QUrl& url, QObject *parent)
     });
 
     connect(_socket, &QWebSocket::textMessageReceived, this, &RequestManager::onMessage);
+    connect(_socket, &QWebSocket::binaryMessageReceived, this, &RequestManager::onBinaryMessage);
 
     connect(_socket, &QWebSocket::disconnected, this, [this]() {
         qDebug() << "Socket disconnected, reconnecting...\n";
@@ -79,7 +78,7 @@ RequestManager::RequestManager(const QUrl& url, QObject *parent)
     connect(&connectionTimer, &QTimer::timeout, this, [this, url]() {
         if (connectionAttempts >= MAX_CONNECTION_ATTEMPTS) {
             emit connectionFailed();
-            qWarning() << "Maximum connection attempts reached:" << MAX_CONNECTION_ATTEMPTS;
+            qWarning() << "Maximum connection attempts reached: " << MAX_CONNECTION_ATTEMPTS;
         } else {
             _socket->open(url);
             connectionAttempts++;
@@ -128,8 +127,11 @@ Request& RequestManager::request(QJsonObject& json, const int& timeoutMs)
     return *req;
 }
 
+void RequestManager::sendBinaryMessage(const QByteArray &message) { _socket->sendBinaryMessage(message); }
+
 void RequestManager::onMessage(const QString &message)
 {
+    qDebug() << "Text message: " << message;
     QJsonDocument doc = QJsonDocument::fromJson(message.toUtf8());
     if (!doc.isObject()) {
         qDebug() << "Invalid JSON received";
@@ -156,4 +158,8 @@ void RequestManager::onMessage(const QString &message)
         else
             emit pendingRequests[rid]->requestFailed(root);
     }
+}
+
+void RequestManager::onBinaryMessage(const QByteArray &message) {
+    emit binaryMessageReceived(message);
 }

@@ -1,6 +1,7 @@
 #include "logic.h"
 
 QString toTimeAgo(qint64 timestamp) {
+    qDebug() << timestamp;
     auto now = QDateTime::currentDateTime();
     auto then = QDateTime::fromMSecsSinceEpoch(timestamp);
     qint64 secs = qAbs(then.secsTo(now));
@@ -11,19 +12,24 @@ QString toTimeAgo(qint64 timestamp) {
     if (secs < 86400) return QString("%1 h. %2").arg(secs/3600).arg(suffix);
     if (secs < 2592000) return QString("%1 d. %2").arg(secs/86400).arg(suffix);
     if (secs < 31536000) return QString("%1 mo. %2").arg(secs/2592000).arg(suffix);
+
     return QString("%1 y. %2").arg(secs/31536000).arg(suffix);
 }
 
 Logic::Logic(QUrl url, QObject *parent)
     : QObject(parent),
-    _requestManager(new RequestManager(url, this)), //to not make you overthink, later will add .env
+    _requestManager(new RequestManager(url, this)),
     _roomsModel(new RoomsModel(this)),
     _roomInfo(new RoomInfo(this)),
     _notificationManager(new NotificationManager(this))
 {
-    connect(_requestManager, &RequestManager::connectionChanged, this, [this](){ emit connectionChanged(); });
+    connect(_requestManager, &RequestManager::connectionChanged, this, [this](){
+        if (_requestManager->connected()) _state.setState(FSM::LOGIN);
+        emit connectionChanged();
+    });
     connect(_requestManager, &RequestManager::connectionFailed, this, [this](){ emit connectionFailed(); });
     connect(_requestManager, &RequestManager::messageReceived, this, &Logic::onMessageReceived);
+    connect(_requestManager, &RequestManager::binaryMessageReceived, this, &Logic::onBinaryMessageReceived);
     connect(&_state, &FSM::stateChanged, this, [this]() { emit stateChanged(); });
 }
 
@@ -50,18 +56,17 @@ void Logic::findRooms(bool refresh)
 
     _requestManager->request(json, TIMEOUT)
         .then([this](const QJsonObject& answer) {
-            qDebug() << "FIND ROOMS: " << answer;
             _roomsModel->setTotal(answer["total"].toInt());
 
             const QJsonArray rooms = answer["rooms"].toArray();
             for (const QJsonValue& room : rooms) {
 
-                const QString& rid = room["rid"].toString(), timeAgo = toTimeAgo(room["created_at"].toInteger()),
+                const QString& rid = room["rid"].toString(), timeAgo = toTimeAgo(room["createdAt"].toInteger()),
                     name = room["name"].toString();
                 const int currentlyUsers = room["currently_users"].toInt(), maxCapacity = room["max_capacity"].toInt();
                 const bool started = room["started"].toBool();
 
-                _roomsModel->pushRoom(RoomsModel::Room({ rid, name, timeAgo, (unsigned int)maxCapacity, (unsigned int)currentlyUsers, started }));
+                _roomsModel->pushRoom({ rid, name, timeAgo, maxCapacity, currentlyUsers, started });
             }
 
             _roomsModel->setLoading(false);
@@ -103,7 +108,6 @@ void Logic::createRoom(const QString& roomName, const int& maxCapacity)
             _roomInfo->setLeaderUid(myUid);
 
             parseUsers(answer["users"].toArray());
-
             _state.applyEvent(FSM::JOINED_ROOM);
         })
         .catchError([this](const QJsonObject& error) {
@@ -125,9 +129,9 @@ void Logic::joinRoom(const QString &rid)
             _roomInfo->setMaxCapacity(answer["max_capacity"].toInt());
             _roomInfo->setMyUid(answer["uid"].toString());
             _roomInfo->setLeaderUid(answer["leaderUid"].toString());
+            _roomInfo->clearParticipants();
 
             parseUsers(answer["users"].toArray());
-
             _state.applyEvent(FSM::JOINED_ROOM);
         })
         .catchError([this](const QJsonObject& error) {
@@ -139,11 +143,9 @@ void Logic::leaveRoom()
 {
     QJsonObject json;
     json["cmd"] = "leave_room";
-    json["rid"] = _roomInfo->rid();
 
     _requestManager->request(json, TIMEOUT)
         .then([this](const QJsonObject& answer) {
-            qDebug() << answer << "\n";
             _roomInfo->clearParticipants();
             _state.applyEvent(FSM::LEFT_ROOM);
         })
@@ -156,7 +158,6 @@ void Logic::kickUser(const QString &uid)
 {
     QJsonObject json;
     json["cmd"] = "kick";
-    json["rid"] = _roomInfo->rid();
     json["kickedUid"] = uid;
 
     _requestManager->request(json, TIMEOUT)
@@ -173,46 +174,34 @@ void Logic::startRoom()
 {
     QJsonObject json;
     json["cmd"] = "start_game";
-    json["rid"] = _roomInfo->rid();
 
     _requestManager->request(json, TIMEOUT)
-        .then([this](const QJsonObject& answer) {
-            _state.applyEvent(FSM::ROOM_STARTED);
-        })
-        .catchError([this](const QJsonObject& error) {
-            _notificationManager->error(error["error_message"].toString());
-        });
+        .then([this](const QJsonObject& answer) { _state.applyEvent(FSM::ROOM_STARTED); })
+        .catchError([this](const QJsonObject& error) { _notificationManager->error(error["error_message"].toString()); });
 }
 
 void Logic::sendPoints(const QList<QPointF> &batchedPoints, const QColor& color, const int& penWidth)
 {
-    QJsonObject json;
+    const quint8 MSG_TYPE_DRAW = 0x01;
 
-    QJsonArray points;
-    for (auto& p : batchedPoints) {
-        QJsonObject point;
-        point["x"] = p.x();
-        point["y"] = p.y();
-        points.append(point);
-    }
+    QByteArray block;
+    QDataStream out(&block, QIODevice::WriteOnly);
+    out.setVersion(QDataStream::Qt_6_0);
 
-    json["cmd"] = "sync_drawing";
-    json["rid"] = _roomInfo->rid();
-    json["points"] = points;
-    json["penWidth"] = penWidth;
-    json["color"] = color.name();
+    out << MSG_TYPE_DRAW
+           << penWidth
+           << color.rgba()
+           << batchedPoints.size();
 
-    _requestManager->request(json, TIMEOUT)
-        .catchError([this](const QJsonObject& error) {
-            _notificationManager->error(error["error_message"].toString());
-        });
+    for (auto& p : batchedPoints) out << float(p.x()) << float(p.y());
+
+    _requestManager->sendBinaryMessage(block);
 }
 
 void Logic::finishGame()
 {
     QJsonObject json;
     json["cmd"] = "finish_game";
-    json["rid"] = _roomInfo->rid();
 
     _requestManager->request(json, TIMEOUT)
         .then([this](const QJsonObject& answer) {
@@ -236,7 +225,6 @@ void Logic::onMessageReceived(const QString &message)
     const QString& request = root["cmd"].toString();
 
     QVector<std::function<bool()>> handlers = {
-        [this, &request, &root]() { return onPointsReceived(request, root); },
         [this, &request, &root]() { return onUserJoined(request, root); },
         [this, &request, &root]() { return onUserLeft(request, root); },
         [this, &request, &root]() { return onKick(request, root); },
@@ -278,7 +266,6 @@ bool Logic::onUserLeft(const QString &request, QJsonObject &root)
 
     const QString rid = root["rid"].toString();
     if (rid == _roomInfo->rid()) {
-        qDebug() << root;
         _roomInfo->removeParticipant(root["leftUid"].toString());
         _notificationManager->notification("User left!");
     }
@@ -288,9 +275,7 @@ bool Logic::onUserLeft(const QString &request, QJsonObject &root)
 
 bool Logic::onKick(const QString &request, QJsonObject &root)
 {
-    if (request != "user_kicked") return false;
-
-    if (_roomInfo->isMeLeader()) return true; //I've kicked already
+    if (request != "user_kicked" || _roomInfo->isMeLeader()) return false;
 
     const QString rid = root["rid"].toString();
     if (rid == _roomInfo->rid()) {
@@ -333,30 +318,6 @@ bool Logic::onStartRoom(const QString &request, QJsonObject &root)
     return true;
 }
 
-bool Logic::onPointsReceived(const QString &request, QJsonObject &root)
-{
-    if (request != "sync_drawing")
-        return false;
-
-    const QString rid = root["rid"].toString();
-
-    if (_roomInfo->rid() == rid) {
-        const auto& points = root["points"].toArray();
-
-        QList<QPointF> batchedPoints;
-
-        for (const QJsonValue& point : points) batchedPoints.append(QPointF{ point["x"].toDouble(), point["y"].toDouble() });
-
-        emit pointsBatched(
-            batchedPoints,
-            QColor(root["color"].toString()),
-            root["penWidth"].toInt()
-        );
-    }
-
-    return true;
-}
-
 bool Logic::onFinishGame(const QString &request, QJsonObject &root)
 {
     if (request != "finish_game")
@@ -368,6 +329,33 @@ bool Logic::onFinishGame(const QString &request, QJsonObject &root)
     }
 
     return true;
+}
+
+void Logic::onBinaryMessageReceived(const QByteArray &message)
+{
+    if (message.isEmpty()) return;
+
+    QDataStream in(message);
+    in.setVersion(QDataStream::Qt_6_0);
+
+    quint8 type;
+    in >> type;
+    if (type != 0x01) return;
+
+    int penWidth;
+    quint32 colorRgba;
+    qsizetype pointsCount;
+    in >> penWidth >> colorRgba >> pointsCount;
+
+    QList<QPointF> batchedPoints;
+    batchedPoints.reserve(pointsCount);
+    for (int i = 0; i < pointsCount; ++i) {
+        float x, y;
+        in >> x >> y;
+        batchedPoints.append(QPointF{ static_cast<double>(x), static_cast<double>(y) });
+    }
+
+    emit pointsBatched(batchedPoints, QColor::fromRgba(colorRgba), penWidth);
 }
 
 void Logic::parseUsers(const QJsonArray &users)
@@ -382,5 +370,3 @@ void Logic::parseUsers(const QJsonArray &users)
 }
 
 Logic::~Logic() {}
-
-

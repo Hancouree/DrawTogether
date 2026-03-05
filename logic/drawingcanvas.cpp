@@ -34,7 +34,7 @@ void DrawingCanvas::addPoint(qreal x, qreal y)
 
     pointBuffer.append(normalize(currentPoint));
 
-    if (pointBuffer.size() >= 5) {
+    if (pointBuffer.size() >= 10) {
         emit pointsBatched(pointBuffer);
         pointBuffer.clear();
         pointBuffer.append(normalize(lastPoint));

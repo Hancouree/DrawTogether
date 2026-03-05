@@ -40,7 +40,7 @@ int main(int argc, char *argv[])
     QString SERVER_URL = env.contains("SERVER_URL") ? env["SERVER_URL"] : "127.0.0.1",
         SERVER_PORT = env.contains("SERVER_PORT") ? env["SERVER_PORT"] : "5050";
 
-    Logic logic(QUrl(QString("wss://%1:%2").arg(SERVER_URL).arg(SERVER_PORT)));
+    Logic logic(QUrl(QString("ws://%1:%2").arg(SERVER_URL).arg(/*SERVER_PORT*/5050)));
 
     QQmlApplicationEngine engine;
     engine.rootContext()->setContextProperty("logic", &logic);

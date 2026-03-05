@@ -66,9 +66,9 @@ Window {
             } else {
                 if (stackView.depth > 1) {
                     stackView.pop()
-                } else {
-                    stackView.replace("components/LoginPage.qml"/*"components/Canvas.qml"*/)
                 }
+
+                stackView.replace("components/LoginPage.qml")
             }
         }
 

@@ -21,16 +21,17 @@ public:
     ~RequestManager();
 
     void connectOnceMore();
-
     Request& request(QJsonObject& json, const int& timeoutMs);
-
-    bool connected() const { return _socket->state() == QAbstractSocket::ConnectedState; }
+    void sendBinaryMessage(const QByteArray& message);
+    bool connected() const noexcept { return _socket->state() == QAbstractSocket::ConnectedState; }
 signals:
     void connectionFailed();
     void connectionChanged();
     void messageReceived(const QString& message);
+    void binaryMessageReceived(const QByteArray& message);
 private slots:
     void onMessage(const QString& message);
+    void onBinaryMessage(const QByteArray& message);
 private:
     QWebSocket* _socket = nullptr;
     QHash<QString, Request*> pendingRequests;

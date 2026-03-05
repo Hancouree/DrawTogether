@@ -35,7 +35,8 @@ public:
     ~FSM();
 
     States state() const { return _state; }
-    void applyEvent(const Events& event);
+    void setState(States state);
+    void applyEvent(Events event);
 signals:
     void stateChanged();
 private:

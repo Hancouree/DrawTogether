@@ -13,8 +13,8 @@ public:
         QString rid;
         QString name;
         QString createdAt;
-        unsigned int maxCapacity;
-        unsigned currentlyUsers;
+        int maxCapacity;
+        int currentlyUsers;
         bool started;
     };
 
